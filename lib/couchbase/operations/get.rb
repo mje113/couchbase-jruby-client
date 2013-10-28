@@ -128,18 +128,25 @@ module Couchbase::Operations
     #     c.get("foo" => 10, "bar" => 20, :lock => true)
     #     #=> {"foo" => val1, "bar" => val2}
     #
-    def get(*args, &block)
-      sync_block_error if !async? && block_given?
+    def get(*args)
       key, options = expand_get_args(args)
 
       if async?
         if block_given?
-          async_get(key, options, &Proc.new)
+          async_get(key, &Proc.new)
         else
-          async_get(key, options)
+          async_get(key)
         end
       else
-        sync_get(key, options)
+        sync_block_error if block_given?
+        case key
+        when String, Symbol
+          get_single(key, options)
+        when Array
+          get_multi(key, options)
+        when Hash
+          get_and_touch(key, options)
+        end
       end
     end
 
@@ -151,7 +158,7 @@ module Couchbase::Operations
       results = if options[:extended]
                   get_multi_extended(keys)
                 else
-                  java_get_multi(keys)
+                  client_get_multi(keys)
                 end
 
       not_found_error(results.size != keys.size, options)
@@ -164,29 +171,21 @@ module Couchbase::Operations
       end
     end
 
+    def async_get(key)
+      case key
+      when String, Symbol
+        meta = { op: :get, key: key }
+        future = client.asyncGet(key)
+      when Array
+        meta = { op: :get }
+        future = client.asyncGetBulk(keys)
+      when Hash
+        # async_get_and_touch(key, options, &block)
+      end
+      register_future(future, meta, &Proc.new) if block_given?
+    end
+
     private
-
-    def sync_get(key, options)
-      case key
-      when String, Symbol
-        get_single(key, options)
-      when Array
-        get_multi(key, options)
-      when Hash
-        get_and_touch(key, options)
-      end
-    end
-
-    def async_get(key, options, &block)
-      case key
-      when String, Symbol
-        async_get_single(key, options, &block)
-      when Array
-        async_get_multi(key, options, &block)
-      when Hash
-        async_get_and_touch(key, options, &block)
-      end
-    end
 
     def expand_get_args(args)
       options = extract_options_hash(args)
@@ -200,11 +199,11 @@ module Couchbase::Operations
         get_single_extended(key, options)
       else
         value = if options.key?(:lock)
-                  java_get_and_lock(key, options[:lock])
+                  client_get_and_lock(key, options[:lock])
                 elsif options.key?(:ttl)
-                  java_get_and_touch(key, options[:ttl])
+                  client_get_and_touch(key, options[:ttl])
                 else
-                  java_get(key)
+                  client_get(key)
                 end
 
         not_found_error(value.nil?, options)
@@ -213,19 +212,9 @@ module Couchbase::Operations
     end
 
     def get_single_extended(key, options = {})
-      extended = java_get_extended(key)
+      extended = client_get_extended(key)
       not_found_error(extended.nil?, options)
       extended
-    end
-
-    def async_get_single(key, options, &block)
-      future = client.asyncGet(key)
-      register_future(future, { op: :get, key: key }, &block)
-    end
-
-    def async_get_multi(keys, options, &block)
-      future = client.asyncGetBulk(keys)
-      register_future(future, { op: :get }, &block)
     end
 
     def get_and_touch(key, options = {})
@@ -233,7 +222,7 @@ module Couchbase::Operations
         get_multi_and_touch(key, options)
       else
         key, ttl = key.first
-        value = java_get_and_touch(key, ttl)
+        value = client_get_and_touch(key, ttl)
         not_found_error(value.nil?)
         { key => load(value) }
       end
@@ -258,19 +247,19 @@ module Couchbase::Operations
       keys.map { |key| results[key] }
     end
 
-    def java_get(key)
+    def client_get(key)
       client.get(key)
     end
 
-    def java_get_and_touch(key, ttl)
+    def client_get_and_touch(key, ttl)
       client.getAndTouch(key, ttl).getValue
     end
 
-    def java_get_and_lock(key, lock)
+    def client_get_and_lock(key, lock)
       client.getAndLock(key, lock).value
     end
 
-    def java_get_extended(key)
+    def client_get_extended(key)
       cas_value = client.gets(key)
 
       if cas_value.nil?
@@ -280,7 +269,7 @@ module Couchbase::Operations
       end
     end
 
-    def java_get_multi(keys)
+    def client_get_multi(keys)
       client.getBulk(keys)
     rescue java.lang.ClassCastException
       raise TypeError.new

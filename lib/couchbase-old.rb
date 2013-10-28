@@ -1,24 +1,25 @@
+# Author:: Couchbase <info@couchbase.com>
+# Copyright:: 2011, 2012 Couchbase, Inc.
+# License:: Apache License, Version 2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-unless RUBY_PLATFORM =~ /java/
-  error "This gem is only compatible with a java-based ruby environment like JRuby."
-  exit 255
-end
-
-require 'java'
-require 'jars/commons-codec-1.5.jar'
-require 'jars/couchbase-client-1.2.0.jar'
-require 'jars/jettison-1.1.jar'
-require 'jars/httpcore-4.1.1.jar'
-require 'jars/netty-3.5.5.Final.jar'
-require 'jars/spymemcached-2.10.0.jar'
-require 'jars/httpcore-nio-4.1.1.jar'
 require 'couchbase/version'
+require 'yaji'
 require 'uri'
-require 'atomic'
 require 'couchbase/transcoder'
-require 'couchbase/async'
-require 'couchbase/operations'
-require 'couchbase/error'
+require 'couchbase_ext'
 require 'couchbase/constants'
 require 'couchbase/utils'
 require 'couchbase/bucket'
@@ -27,21 +28,15 @@ require 'couchbase/view'
 require 'couchbase/result'
 require 'couchbase/cluster'
 
-include Java
 
-import Java::com.couchbase.client.CouchbaseClient;
-
-at_exit do
-  Couchbase.disconnect
-end
-
-# Couchbase jruby client
+# Couchbase ruby client
 module Couchbase
 
-  @@buckets = Atomic.new({})
+  if RUBY_VERSION.to_f >= 1.9
+    autoload(:ConnectionPool, 'couchbase/connection_pool')
+  end
 
   class << self
-
     # The method +connect+ initializes new Bucket instance with all arguments passed.
     #
     # @since 1.0.0
@@ -66,9 +61,6 @@ module Couchbase
     # @return [Bucket] connection instance
     def connect(*options)
       Bucket.new(*(options.flatten))
-      # disconnect
-      # @@bucket.update { |bucket| bucket ||= Bucket.new(*(options.flatten)) }
-      # @@bucket.value
     end
     alias :new :connect
 
@@ -82,6 +74,22 @@ module Couchbase
     #
     # @return [Hash, String]
     attr_accessor :connection_options
+
+    # @private the thread local storage
+    def thread_storage
+      Thread.current[:couchbase] ||= { :pid => Process.pid, :bucket => {} }
+    end
+
+    # @private resets thread local storage if process ids don't match
+    # see 13.3.1: http://www.modrails.com/documentation/Users%20guide%20Apache.html
+    def verify_connection!
+      reset_thread_storage! if thread_storage[:pid] != Process.pid
+    end
+
+    # @private resets thread local storage
+    def reset_thread_storage!
+      Thread.current[:couchbase] = nil
+    end
 
     # The connection instance for current thread
     #
@@ -117,6 +125,7 @@ module Couchbase
     #
     # @return [Bucket]
     def bucket(name = nil)
+      verify_connection!
       name ||= case @connection_options
                when Hash
                  @connection_options[:bucket]
@@ -126,8 +135,7 @@ module Couchbase
                else
                  "default"
                end
-      @@buckets.update { |buckets| buckets[name] ||= connect(connection_options) }
-      @@buckets.value[name]
+      thread_storage[:bucket][name] ||= connect(connection_options)
     end
 
     # Set a connection instance for current thread
@@ -135,20 +143,13 @@ module Couchbase
     # @since 1.1.0
     #
     # @return [Bucket]
-    def bucket=(connection)
+    def bucket=(connection, name = nil)
+      verify_connection!
       name ||= @connection_options && @connection_options[:bucket] || "default"
-      @@buckets.update { |buckets| buckets[name] = connection }
-      @@buckets.value[name]
+      thread_storage[:bucket][name] = connection
     end
+    alias set_bucket bucket=
 
-    def connected?
-      !!@@buckets.value.empty?
-    end
-
-    def disconnect
-      @@buckets.value.each(&:disconnect) if connected?
-      @@buckets = Atomic.new({})
-    end
   end
-end
 
+end

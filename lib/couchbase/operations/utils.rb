@@ -26,9 +26,9 @@ module Couchbase::Operations
     def not_found_error(error, options = {})
       if error
         if options.key?(:quiet)
-          raise Error::NotFound.new if !options[:quiet]
+          raise Couchbase::Error::NotFound.new if !options[:quiet]
         elsif !quiet?
-          raise Error::NotFound.new
+          raise Couchbase::Error::NotFound.new
         end
       end
     end
@@ -36,6 +36,8 @@ module Couchbase::Operations
     def future_cas(future)
       future.get && future.getCas
     end
+
+    public
 
     def dump(obj)
       transcoder.dump(obj)

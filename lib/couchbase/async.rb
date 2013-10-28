@@ -128,6 +128,7 @@ module Couchbase
       else
         register_callback(future, &block)
       end
+      future
     end
 
     def register_callback(future, &block)

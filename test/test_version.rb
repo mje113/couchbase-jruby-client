@@ -35,6 +35,7 @@ class TestVersion < MiniTest::Test
   end
 
   def test_async_version
+    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     ver = {}
     connection.run do |conn|

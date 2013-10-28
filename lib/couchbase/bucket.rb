@@ -1,5 +1,3 @@
-require 'pry'
-
 module Couchbase
 
   class Bucket
@@ -189,9 +187,6 @@ module Couchbase
     end
 
     def connect
-      # TODO: doesn't work
-      ObjectSpace.define_finalizer(self, -> conn { conn.disconnect })
-
       uris = if @node_list
                Array(@node_list).map { |n| URI.new(n) }
              else
@@ -246,6 +241,14 @@ module Couchbase
 
     def on_error(&block)
       @on_error = block
+    end
+
+    def version
+      {}.tap do |hash|
+        @client.getVersions.to_hash.each_pair do |ip, ver|
+          hash[ip.to_s] = ver
+        end
+      end
     end
 
     # Compare and swap value.
