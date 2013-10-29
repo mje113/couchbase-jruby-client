@@ -2,6 +2,7 @@ require 'couchbase/operations/touch'
 require 'couchbase/operations/store'
 require 'couchbase/operations/get'
 require 'couchbase/operations/delete'
+require 'couchbase/operations/unlock'
 require 'couchbase/operations/arithmetic'
 require 'couchbase/operations/stats'
 require 'couchbase/operations/utils'
@@ -14,6 +15,7 @@ module Couchbase
       klass.send(:include, Get)
       klass.send(:include, Touch)
       klass.send(:include, Delete)
+      klass.send(:include, Unlock)
       klass.send(:include, Arithmetic)
       klass.send(:include, Stats)
       klass.send(:include, Utils)
