@@ -94,15 +94,29 @@ module Couchbase::Operations
     #   @example Ensure that the key will be persisted at least on the one node
     #     c.set("foo", "bar", :observe => {:persisted => 1})
     #
-    def set(key, value = nil, options = {}, &block)
-      sync_block_error if !async? && block_given?
+    def set(key, value = nil, options = {})
       op, key, value, ttl = store_args_parser(key, value, options)
 
-      if op == :single
-        set_single(key, value, ttl, options, &block)
+      if async?
+        if block_given?
+          async_set(key, value, ttl, &Proc.new)
+        else
+          async_set(key, value, ttl)
+        end
       else
-        set_multi(key)
+        sync_block_error if block_given?
+
+        if op == :single
+          set_single(key, value, ttl, options)
+        else
+          set_multi(key)
+        end
       end
+    end
+
+    def async_set(key, value, ttl)
+      future = client.set(key.to_s, ttl, dump(value))
+      register_future(future, { op: :set }, &Proc.new) if block_given?
     end
 
     def []=(key, *args)
@@ -161,15 +175,29 @@ module Couchbase::Operations
     #   @example Ensure that the key will be persisted at least on the one node
     #     c.add("foo", "bar", :observe => {:persisted => 1})
     #
-    def add(key, value = nil, options = {}, &block)
-      sync_block_error if !async? && block_given?
+    def add(key, value = nil, options = {})
       op, key, value, ttl = store_args_parser(key, value, options)
 
-      if op == :single
-        add_single(key, value, ttl, options, &block)
+      if async?
+        if block_given?
+          async_add(key, value, ttl, &Proc.new)
+        else
+          async_add(key, value, ttl)
+        end
       else
-        add_multi(key)
+        sync_block_error if block_given?
+
+        if op == :single
+          add_single(key, value, ttl, options)
+        else
+          add_multi(key)
+        end
       end
+    end
+
+    def async_add(key, value, ttl)
+      future = client.add(key.to_s, ttl, dump(value))
+      register_future(future, { op: :add }, &Proc.new) if block_given?
     end
 
     # Replace the existing object in the database
@@ -215,7 +243,14 @@ module Couchbase::Operations
     #
     def replace(key, value, options = {})
       sync_block_error if !async? && block_given?
-      if cas = java_replace(key, value, options[:ttl])
+
+      future = if options[:ttl].nil?
+                 client.replace(key.to_s, dump(value))
+               else
+                 client.replace(key.to_s, options[:ttl], dump(value))
+               end
+
+      if cas = future_cas(future)
         cas
       else
         raise Couchbase::Error::NotFound.new
@@ -380,30 +415,15 @@ module Couchbase::Operations
     end
 
     def set_single(key, value, ttl, options = {}, &block)
-      if async?
-        java_async_set(key, value, ttl, &block)
-      else
-        if options[:cas]
-          if java_set_cas(key, value, ttl, options[:cas])
-            get(key, extended: true)[2]
-          else
-            raise Couchbase::Error::KeyExists.new
-          end
+      if options[:cas]
+        cas_response = client.cas(key.to_s, options[:cas], ttl, dump(value))
+        if cas_response.to_s == 'OK'
+          get(key, extended: true)[2]
         else
-          if cas = java_set(key, value, ttl)
-            cas
-          else
-            raise Couchbase::Error::KeyExists.new
-          end
+          raise Couchbase::Error::KeyExists.new
         end
-      end
-    end
-
-    def add_single(key, value, ttl, options = {})
-      if async?
-        java_async_set(key, value, ttl, &Proc.new)
       else
-        if cas = java_add(key, value, ttl)
+        if cas = client_set(key, value, ttl)
           cas
         else
           raise Couchbase::Error::KeyExists.new
@@ -411,11 +431,19 @@ module Couchbase::Operations
       end
     end
 
+    def add_single(key, value, ttl, options = {})
+      if cas = client_add(key, value, ttl)
+        cas
+      else
+        raise Couchbase::Error::KeyExists.new
+      end
+    end
+
     # TODO:
     def set_multi(keys)
       {}.tap do |results|
         keys.each_pair do |key, value|
-          results[key] = java_set(key, value, default_ttl)
+          results[key] = client_set(key, value, default_ttl)
         end
       end
     end
@@ -423,44 +451,24 @@ module Couchbase::Operations
     def add_multi(keys)
       {}.tap do |results|
         keys.each_pair do |key, value|
-          results[key] = java_add(key, value, default_ttl)
+          results[key] = client_add(key, value, default_ttl)
         end
       end
     end
 
-    def java_set(key, value, ttl)
-      future = client.set(key.to_s, ttl, dump(value))
-      future_cas(future)
-    end
-
-    def java_add(key, value, ttl)
-      future = client.add(key.to_s, ttl, dump(value))
-      future_cas(future)
-    end
-
-    def java_replace(key, value, ttl)
-      future = if ttl.nil?
-                 client.replace(key.to_s, dump(value))
-               else
-                 client.replace(key.to_s, ttl, dump(value))
-               end
-
-      future_cas(future)
-    end
-
-    def java_append(key, value)
+    def client_append(key, value)
       future = client.append(key.to_s, dump(value))
       future_cas(future)
     end
 
-    def java_set_cas(key, value, ttl, cas)
-      cas_response = client.cas(key.to_s, cas, ttl, dump(value))
-      cas_response.to_s == 'OK'
+    def client_set(key, value, ttl)
+      future = client.set(key.to_s, ttl, dump(value))
+      future_cas(future)
     end
 
-    def java_async_set(key, value, ttl, &block)
-      future = client.set(key.to_s, ttl, dump(value))
-      register_future(future, { op: :set }, &block)
+    def client_add(key, value, ttl)
+      future = client.add(key.to_s, ttl, dump(value))
+      future_cas(future)
     end
 
   end

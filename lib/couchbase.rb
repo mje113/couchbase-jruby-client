@@ -38,7 +38,7 @@ end
 # Couchbase jruby client
 module Couchbase
 
-  @@bucket = Atomic.new(nil)
+  @@buckets = Atomic.new({})
 
   class << self
 
@@ -65,9 +65,10 @@ module Couchbase
     #
     # @return [Bucket] connection instance
     def connect(*options)
-      disconnect
-      @@bucket.update { |bucket| bucket ||= Bucket.new(*(options.flatten)) }
-      @@bucket.value
+      Bucket.new(*(options.flatten))
+      # disconnect
+      # @@bucket.update { |bucket| bucket ||= Bucket.new(*(options.flatten)) }
+      # @@bucket.value
     end
     alias :new :connect
 
@@ -91,12 +92,42 @@ module Couchbase
     # @example
     #   Couchbase.bucket.set("foo", "bar")
     #
+    # @example Set connection options using Hash
+    #   Couchbase.connection_options = {:node_list => ["example.com:8091"]}
+    #   Couchbase.bucket("slot1").set("foo", "bar")
+    #   Couchbase.bucket("slot1").bucket #=> "default"
+    #   Couchbase.connection_options[:bucket] = "test"
+    #   Couchbase.bucket("slot2").bucket #=> "test"
+    #
+    # @example Set connection options using URI
+    #   Couchbase.connection_options = "http://example.com:8091/pools"
+    #   Couchbase.bucket("slot1").set("foo", "bar")
+    #   Couchbase.bucket("slot1").bucket #=> "default"
+    #   Couchbase.connection_options = "http://example.com:8091/pools/buckets/test"
+    #   Couchbase.bucket("slot2").bucket #=> "test"
+    #
+    # @example Use named slots to keep a connection
+    #   Couchbase.connection_options = {
+    #     :node_list => ["example.com", "example.org"],
+    #     :bucket => "users"
+    #   }
+    #   Couchbase.bucket("users").set("john", {"balance" => 0})
+    #   Couchbase.connection_options[:bucket] = "orders"
+    #   Couchbase.bucket("other").set("john:1", {"products" => [42, 66]})
+    #
     # @return [Bucket]
-    def bucket
-      if !connected?
-        connect(connection_options)
-      end
-      @@bucket.value
+    def bucket(name = nil)
+      name ||= case @connection_options
+               when Hash
+                 @connection_options[:bucket]
+               when String
+                 path = URI.parse(@connection_options).path
+                 path[%r(^(/pools/([A-Za-z0-9_.-]+)(/buckets/([A-Za-z0-9_.-]+))?)?), 3] || "default"
+               else
+                 "default"
+               end
+      @@buckets.update { |buckets| buckets[name] ||= connect(connection_options) }
+      @@buckets.value[name]
     end
 
     # Set a connection instance for current thread
@@ -105,73 +136,19 @@ module Couchbase
     #
     # @return [Bucket]
     def bucket=(connection)
-      @@bucket.update { |bucket| bucket = connection }
+      name ||= @connection_options && @connection_options[:bucket] || "default"
+      @@buckets.update { |buckets| buckets[name] = connection }
+      @@buckets.value[name]
     end
 
     def connected?
-      !!@@bucket.value
+      !!@@buckets.value.empty?
     end
 
     def disconnect
-      @@bucket.value.disconnect if connected?
-      @@bucket = Atomic.new(nil)
+      @@buckets.value.each(&:disconnect) if connected?
+      @@buckets = Atomic.new({})
     end
   end
-end
-
-__END__
-
-    def self.connect(*options)
-      disconnect
-      Bucket.new(*(options.flatten))
-    end
-
-    def self.new(*options)
-      connect(options)
-    end
-
-    # Default connection options
-    #
-    # @since 1.1.0
-    #
-    # @example Using {Couchbase#connection_options} to change the bucket
-    #   Couchbase.connection_options = {:bucket => 'blog'}
-    #   Couchbase.bucket.name     #=> "blog"
-    #
-    # @return [Hash, String]
-    attr_accessor :connection_options
-
-    # The connection instance for current thread
-    #
-    # @since 1.1.0
-    #
-    # @see Couchbase.connection_options
-    #
-    # @example
-    #   Couchbase.bucket.set("foo", "bar")
-    #
-    # @return [Bucket]
-    def self.bucket
-      @bucket ||= connect(connection_options)
-    end
-
-    # Set a connection instance for current thread
-    #
-    # @since 1.1.0
-    #
-    # @return [Bucket]
-    def self.bucket=(connection)
-      @bucket = connection
-    end
-
-    def self.connected?
-      !!@bucket
-    end
-
-    def self.disconnect
-      bucket.disconnect if connected?
-      @bucket = nil
-    end
-
 end
 

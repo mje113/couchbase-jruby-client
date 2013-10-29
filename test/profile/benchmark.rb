@@ -31,7 +31,7 @@ require 'benchmark'
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), "..", "..", "lib")
 require 'couchbase'
-require 'memcached'
+# require 'memcached'
 require 'dalli'
 
 puts `uname -a`
@@ -80,9 +80,9 @@ class Bench
   def reset_clients
     host = ENV['HOST'] || '127.0.0.1'
     @clients = {
-      "dalli" => lambda { Dalli::Client.new("#{host}:11211", :marshal => true, :threadsafe => false) },
-      "memcached" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => false, :buffer_requests => false, :binary_protocol => true) },
-      "memcached:buffer" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => true, :buffer_requests => true, :binary_protocol => true) },
+      "dalli" => lambda { Dalli::Client.new("#{host}:11211", :marshal => true, :threadsafe => true) },
+      # "memcached" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => false, :buffer_requests => false, :binary_protocol => true) },
+      # "memcached:buffer" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => true, :buffer_requests => true, :binary_protocol => true) },
       "couchbase" => lambda { Couchbase.new("http://#{host}:8091/pools/default/buckets/default", :default_format => :marshal) }
     }
   end

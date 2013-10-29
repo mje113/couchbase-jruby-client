@@ -22,6 +22,8 @@ require 'couchbase'
 require 'socket'
 require 'open-uri'
 
+require 'pry'
+
 # Surpress connection logging
 # java_import java.lang.System
 # java_import java.util.logging.Logger
