@@ -195,12 +195,12 @@ module Couchbase::Operations
     end
 
     def get_single(key, options)
-      if options[:extended]
+      if options[:lock]
+        client_get_and_lock(key, options)
+      elsif options[:extended]
         get_extended(key, options)
       else
-        value = if options.key?(:lock)
-                  client_get_and_lock(key, options[:lock])
-                elsif options.key?(:ttl)
+        value = if options.key?(:ttl)
                   client_get_and_touch(key, options[:ttl])
                 else
                   client.get(key)
@@ -258,9 +258,14 @@ module Couchbase::Operations
       client.getAndTouch(key, ttl).getValue
     end
 
-    def client_get_and_lock(key, lock)
-      lock = 30 if lock == true
-      client.getAndLock(key, lock).value
+    def client_get_and_lock(key, options)
+      lock = options[:lock] == true ? 30 : options[:lock]
+      cas = client.getAndLock(key, lock)
+      if options[:extended]
+        [load(cas.getValue), nil, cas.getCas]
+      else
+        load cas.getValue
+      end
     end
 
     def client_get_extended(key)

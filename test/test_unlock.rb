@@ -43,7 +43,6 @@ class TestUnlock < MiniTest::Test
   end
 
   def test_alternative_syntax_for_single_key
-    skip
     if @mock.real?
       connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
       connection.set(uniq_id, "foo")
@@ -104,7 +103,6 @@ class TestUnlock < MiniTest::Test
   end
 
   def test_tmp_failure
-    skip
     if @mock.real?
       connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
       cas1 = connection.set(uniq_id(1), "foo")

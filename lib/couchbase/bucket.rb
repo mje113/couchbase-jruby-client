@@ -146,7 +146,7 @@ module Couchbase
       }
 
       url_options = if url.is_a? String
-                      raise ArgumentError.new unless url =~ /^http:\/\//
+                      fail ArgumentError.new unless url =~ /^http:\/\//
 
                       uri = URI.new(url)
 
@@ -199,9 +199,9 @@ module Couchbase
         @connected = true
       rescue Java::ComCouchbaseClientVbucket::ConfigurationException #,
              #Java::Io::IOException
-        raise Couchbase::Error::Auth.new
+        fail Couchbase::Error::Auth
       rescue java.net.ConnectException => e
-        raise Couchbase::Error::Connect.new
+        fail Couchbase::Error::Connect
       end
 
       self
@@ -231,7 +231,7 @@ module Couchbase
         @connection_factory = nil
         @connected = false
       else
-        raise Couchbase::Error::Connect.new
+        fail Couchbase::Error::Connect
       end
     end
 
@@ -316,12 +316,12 @@ module Couchbase
         block = Proc.new
         get(key) do |ret|
           val = block.call(ret) # get new value from caller
-          set(ret.key, val, options.merge(:cas => ret.cas, :flags => ret.flags), &block)
+          set(ret.key, val, options.merge(:cas => ret.cas, &block))
         end
       else
         val, flags, ver = get(key, :extended => true)
         val = yield(val) # get new value from caller
-        set(key, val, options.merge(:cas => ver, :flags => flags))
+        set(key, val, options.merge(:cas => ver))
       end
     end
     alias :compare_and_swap :cas

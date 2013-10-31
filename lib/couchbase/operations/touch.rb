@@ -64,22 +64,35 @@ module Couchbase::Operations
     #   @example Touch single value
     #     c.touch("foo" => 10)             #=> true
     #
-    def touch(*args, &block)
+    def touch(*args)
       sync_block_error if !async? && block_given?
-      key, options = expand_touch_args(args)
+      key, ttl, options = expand_touch_args(args)
 
-      if key.respond_to?(:to_hash)
-        multi_touch_hash(key, options)
-      elsif key.respond_to?(:to_ary)
-        multi_touch_array(key, options)
-      else
+      case key
+      when String, Symbol
         if async?
-          java_async_touch(key, options[:ttl], &block)
+          if block_given?
+            async_touch(key, ttl, &Proc.new)
+          else
+            async_touch(key, ttl)
+          end
         else
-          success = java_touch(key, options[:ttl])
+          success = client_touch(key, ttl)
           not_found_error(!success, options)
           success
         end
+      when Hash
+        multi_touch_hash(key, options)
+      when Array
+        multi_touch_array(key, options)
+      end
+    end
+
+    def async_touch(key, ttl)
+      if block_given?
+        register_future(client.touch(key, ttl), { op: :touch }, &Proc.new)
+      else
+        client.touch(key, ttl)
       end
     end
 
@@ -87,16 +100,20 @@ module Couchbase::Operations
 
     def expand_touch_args(args)
       options = extract_options_hash(args)
-      options[:ttl] ||= args.size > 1 ? args.pop : default_ttl
-      key = args.pop
+      ttl = options[:ttl] || if args.size > 1 && args.last.respond_to?(:to_int?)
+                               args.pop
+                             else
+                               default_ttl
+                             end
+      key = args.size > 1 ? args : args.pop
 
-      [key, options]
+      [key, ttl, options]
     end
 
     def multi_touch_hash(keys, options = {})
       {}.tap do |results|
         keys.each_pair do |key, ttl|
-          results[key] = java_touch(key, ttl)
+          results[key] = client_touch(key, ttl)
         end
       end
     end
@@ -106,17 +123,13 @@ module Couchbase::Operations
 
       {}.tap do |results|
         keys.each do |key|
-          results[key] = java_touch(key, ttl)
+          results[key] = client_touch(key, ttl)
         end
       end
     end
 
-    def java_touch(key, ttl, options = {})
+    def client_touch(key, ttl, options = {})
       client.touch(key, ttl).get
-    end
-
-    def java_async_touch(key, ttl, &block)
-      register_future(client.touch(key, ttl), { op: :touch }, &block)
     end
 
   end

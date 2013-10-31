@@ -24,5 +24,8 @@ module Couchbase
 
     class ValueFormat < Base
     end
+
+    class TemporaryFail < Base
+    end
   end
 end

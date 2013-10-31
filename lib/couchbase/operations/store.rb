@@ -114,7 +114,7 @@ module Couchbase::Operations
       end
     end
 
-    def async_set(key, value, ttl)
+    def async_set(key, value, ttl = 0)
       future = client.set(key.to_s, ttl, dump(value))
       register_future(future, { op: :set }, &Proc.new) if block_given?
     end

@@ -136,7 +136,7 @@ class TestArithmetic < MiniTest::Test
     assert_equal 0, connection.get(uniq_id)
     sleep(2)
     assert_raises(Couchbase::Error::NotFound) do
-      refute connection.get(uniq_id)
+      connection.get(uniq_id)
     end
   end
 

@@ -1,5 +1,5 @@
 module Couchbase::Operations
-  module Touch
+  module Unlock
 
     # Unlock key
     #
@@ -56,7 +56,16 @@ module Couchbase::Operations
     #
 
     def unlock(key, options = {})
-      
+      cas = options.respond_to?(:to_hash) ? options[:cas] : options
+      if client.unlock(key.to_s, cas)
+        true
+      else
+        raise Couchbase::Error::TemporaryFail.new
+      end
+    end
+
+    def async_unlock(key, options = {})
+
     end
 
   end

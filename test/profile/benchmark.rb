@@ -24,15 +24,12 @@
 #   show exceptions
 #
 
-require "rubygems"
-require "bundler/setup"
-
-require 'benchmark'
+require 'rubygems'
+require 'bundler/setup'
 
 $LOAD_PATH << File.join(File.dirname(__FILE__), "..", "..", "lib")
 require 'couchbase'
-# require 'memcached'
-require 'dalli'
+require 'benchmark/ips'
 
 puts `uname -a`
 puts File.readlines('/proc/cpuinfo').sort.uniq.grep(/model name|cpu cores/) rescue nil
@@ -40,21 +37,13 @@ puts RUBY_DESCRIPTION
 
 class Bench
 
-  def initialize(loops = nil, stack_depth = nil)
-    @loops = (loops || 50000).to_i
-    @stack_depth = (stack_depth || 0).to_i
+  def initialize
 
     puts "PID is #{Process.pid}"
-    puts "Loops is #{@loops}"
-    puts "Stack depth is #{@stack_depth}"
 
-    @m_value = Marshal.dump(
-      @small_value = ["testing"])
-    @m_large_value = Marshal.dump(
-      @large_value = [{"test" => "1", "test2" => "2", Object.new => "3", 4 => 4, "test5" => 2**65}] * 2048)
+    @value = { 'im' => [ 'testing', 'stuff' ] }
 
-    puts "Small value size is: #{@m_value.size} bytes"
-    puts "Large value size is: #{@m_large_value.size} bytes"
+    puts "Raw value size is: #{@value.size} bytes"
 
     @keys = [
       @k1 = "Short",
@@ -64,28 +53,116 @@ class Bench
       @k5 = "Medium2" * 8,
       @k6 = "Long3" * 40]
 
-    reset_clients
+    @cb = Couchbase.new
 
-    Benchmark.bm(36) do |x|
-      @benchmark = x
+    # Ensure it is JITed
+    2_000.times do
+      @cb.set(@k1, 'a')
+      @cb.get(@k1)
     end
   end
 
-  def run(level = @stack_depth)
-    level > 0 ? run(level - 1) : run_without_recursion
+  def run
+    Benchmark.ips do |x|
+      x.report('jruby set') do
+        @cb.set @k1, @value
+        @cb.set @k2, @value
+        @cb.set @k3, @value
+      end
+
+      x.report('java set') do
+        @cb.client.set(@k1, MultiJson.dump(@value)).get
+        @cb.client.set(@k2, MultiJson.dump(@value)).get
+        @cb.client.set(@k3, MultiJson.dump(@value)).get
+      end
+
+      x.report('jruby get') do
+        @cb.get @k1
+        @cb.get @k2
+        @cb.get @k3
+      end
+
+      x.report('java get') do
+        MultiJson.load @cb.client.get(@k1)
+        MultiJson.load @cb.client.get(@k2)
+        MultiJson.load @cb.client.get(@k3)
+      end
+
+      x.report('jruby delete') do
+        @cb.set @k1, ''
+        @cb.set @k2, ''
+        @cb.set @k3, ''
+        @cb.delete(@k1)
+        @cb.delete(@k2)
+        @cb.delete(@k3)
+      end
+
+      x.report('java delete') do
+        @cb.set @k1, ''
+        @cb.set @k2, ''
+        @cb.set @k3, ''
+        @cb.client.delete @k1
+        @cb.client.delete @k2
+        @cb.client.delete @k3
+      end
+
+      x.report('jruby get missing') do
+        @cb.get(@k1, quiet: true)
+        @cb.get(@k2, quiet: true)
+        @cb.get(@k3, quiet: true)
+      end
+
+      x.report('java get missing') do
+        @cb.client.get @k1
+        @cb.client.get @k2
+        @cb.client.get @k3
+      end
+
+      x.report('jruby async set') do
+        @cb.run do
+          100.times do
+            @cb.set @k1, @value
+            @cb.set @k2, @value
+            @cb.set @k3, @value
+          end
+        end
+      end
+
+      x.report('java async set') do
+        futures = []
+        100.times do
+          futures << @cb.client.set(@k1, MultiJson.dump(@value))
+          futures << @cb.client.set(@k2, MultiJson.dump(@value))
+          futures << @cb.client.set(@k3, MultiJson.dump(@value))
+        end
+        futures.each(&:get)
+      end
+
+      x.report('jruby async get') do
+        @cb.run do
+          100.times do
+            @cb.get @k1
+            @cb.get @k2
+            @cb.get @k3
+          end
+        end
+      end
+
+      x.report('java async get') do
+        futures = []
+        100.times do
+          futures << @cb.client.asyncGet(@k1)
+          futures << @cb.client.asyncGet(@k2)
+          futures << @cb.client.asyncGet(@k3)
+        end
+        futures.each(&:get)
+      end
+    end
+
+    @cb.disconnect
   end
 
   private
-
-  def reset_clients
-    host = ENV['HOST'] || '127.0.0.1'
-    @clients = {
-      "dalli" => lambda { Dalli::Client.new("#{host}:11211", :marshal => true, :threadsafe => true) },
-      # "memcached" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => false, :buffer_requests => false, :binary_protocol => true) },
-      # "memcached:buffer" => lambda { Memcached::Rails.new("#{host}:11211", :no_block => true, :buffer_requests => true, :binary_protocol => true) },
-      "couchbase" => lambda { Couchbase.new("http://#{host}:8091/pools/default/buckets/default", :default_format => :marshal) }
-    }
-  end
 
   def benchmark_clients(test_name, populate_keys = true)
     return if ENV["TEST"] and !test_name.include?(ENV["TEST"])
@@ -192,4 +269,4 @@ class Bench
   end
 end
 
-Bench.new(ENV["LOOPS"], ENV["STACK_DEPTH"]).run
+Bench.new.run

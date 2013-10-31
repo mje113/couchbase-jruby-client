@@ -41,6 +41,7 @@ class TestCas < MiniTest::Test
   end
 
   def test_compare_and_swap_async
+    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port,
                                :default_format => :document)
     connection.set(uniq_id, {"bar" => 1})
