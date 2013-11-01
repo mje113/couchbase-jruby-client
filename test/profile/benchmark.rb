@@ -157,116 +157,12 @@ class Bench
         end
         futures.each(&:get)
       end
+
     end
 
     @cb.disconnect
   end
 
-  private
-
-  def benchmark_clients(test_name, populate_keys = true)
-    return if ENV["TEST"] and !test_name.include?(ENV["TEST"])
-
-    @clients.keys.each do |client_name|
-      next if ENV["CLIENT"] and !client_name.include?(ENV["CLIENT"])
-
-      kid = fork do
-        client = @clients[client_name].call
-        begin
-          if populate_keys
-            client.set @k1, @m_value
-            client.set @k2, @m_value
-            client.set @k3, @m_value
-          else
-            client.delete @k1
-            client.delete @k2
-            client.delete @k3
-          end
-
-          GC.disable
-          @benchmark.report("#{test_name}: #{client_name}") { @loops.times { yield client } }
-          STDOUT.flush
-        rescue Exception => e
-          puts "#{test_name}: #{client_name} => #{e.inspect}" if ENV["DEBUG"]
-        end
-        exit
-      end
-      Signal.trap("INT") { Process.kill("KILL", kid); exit }
-      Process.wait(kid)
-    end
-    puts
-  end
-
-  def run_without_recursion
-    benchmark_clients("set") do |c|
-      c.set @k1, @m_value
-      c.set @k2, @m_value
-      c.set @k3, @m_value
-    end
-
-    benchmark_clients("get") do |c|
-      c.get @k1
-      c.get @k2
-      c.get @k3
-    end
-
-    benchmark_clients("get_multi") do |c|
-      if c.respond_to?(:get_multi)
-        c.get_multi @keys
-      else
-        c.get @keys
-      end
-    end
-
-    benchmark_clients("append") do |c|
-      c.append @k1, @m_value
-      c.append @k2, @m_value
-      c.append @k3, @m_value
-    end
-
-    benchmark_clients("prepend") do |c|
-      c.prepend @k1, @m_value
-      c.prepend @k2, @m_value
-      c.prepend @k3, @m_value
-    end
-
-    benchmark_clients("delete") do |c|
-      c.delete @k1
-      c.delete @k2
-      c.delete @k3
-    end
-
-    benchmark_clients("get_missing", false) do |c|
-      c.get @k1 rescue nil
-      c.get @k2 rescue nil
-      c.get @k3 rescue nil
-    end
-
-    benchmark_clients("append_missing", false) do |c|
-      c.append @k1, @m_value rescue nil
-      c.append @k2, @m_value rescue nil
-      c.append @k3, @m_value rescue nil
-    end
-
-    benchmark_clients("prepend_missing", false) do |c|
-      c.prepend @k1, @m_value rescue nil
-      c.prepend @k2, @m_value rescue nil
-      c.prepend @k3, @m_value rescue nil
-    end
-
-    benchmark_clients("set_large") do |c|
-      c.set @k1, @m_large_value
-      c.set @k2, @m_large_value
-      c.set @k3, @m_large_value
-    end
-
-    benchmark_clients("get_large") do |c|
-      c.get @k1
-      c.get @k2
-      c.get @k3
-    end
-
-  end
 end
 
 Bench.new.run

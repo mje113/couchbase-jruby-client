@@ -13,6 +13,7 @@ module Couchbase
     import java.util.concurrent.TimeUnit
     import com.couchbase.client.CouchbaseClient
     import com.couchbase.client.CouchbaseConnectionFactory
+    import com.couchbase.client.CouchbaseConnectionFactoryBuilder
     import com.couchbase.client.protocol.views.Query
 
     include Couchbase::Operations
@@ -194,11 +195,12 @@ module Couchbase
              end
 
       begin
-        @connection_factory = CouchbaseConnectionFactory.new(uris, bucket.to_java_string, password.to_java_string)
-        @client = CouchbaseClient.new(@connection_factory)
+        builder = CouchbaseConnectionFactoryBuilder.new
+        builder.setTranscoder(Java::NetSpyMemcachedTranscoders::SerializingTranscoder.new)
+        connection_factory = builder.buildCouchbaseConnection(uris, bucket.to_java_string, password.to_java_string)
+        @client = CouchbaseClient.new(connection_factory)
         @connected = true
-      rescue Java::ComCouchbaseClientVbucket::ConfigurationException #,
-             #Java::Io::IOException
+      rescue Java::ComCouchbaseClientVbucket::ConfigurationException
         fail Couchbase::Error::Auth
       rescue java.net.ConnectException => e
         fail Couchbase::Error::Connect

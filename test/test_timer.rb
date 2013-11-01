@@ -28,6 +28,7 @@ class TestTimer < MiniTest::Test
   end
 
   def test_initialization
+    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     num = 0
     connection.run do
