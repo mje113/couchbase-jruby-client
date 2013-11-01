@@ -19,13 +19,13 @@ Gem::Specification.new do |s|
   s.test_files    = s.files.grep(%r{^(test|spec|features)/})
   s.require_paths = ['lib']
 
-  s.add_runtime_dependency 'jrjackson',    '~> 0.2.3'
-  s.add_runtime_dependency 'multi_json',   '~> 1.0'
-  s.add_runtime_dependency 'atomic',       '~> 1.1.14'
+  s.add_runtime_dependency 'multi_json',    '~> 1.0'
+  s.add_runtime_dependency 'atomic',        '~> 1.1.14'
 
-  s.add_development_dependency 'bundler',  '~> 1.3'
+  s.add_development_dependency 'bundler',   '~> 1.3'
   s.add_development_dependency 'rake'
-  s.add_development_dependency 'minitest', '~> 5.0.4'
+  s.add_development_dependency 'minitest',  '~> 5.0.4'
+  s.add_development_dependency 'jrjackson', '~> 0.2.3'
   s.add_development_dependency 'active_support'
   s.add_development_dependency 'pry'
 end

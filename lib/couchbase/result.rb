@@ -27,7 +27,7 @@ module Couchbase
     end
 
     def value
-      @bucket.load @future.get
+      @future.get
     rescue MultiJson::LoadError
       nil
     end

@@ -2,19 +2,19 @@ module Couchbase
 
   class Bucket
 
-    import java.io.IOException
-    import java.net.SocketAddress
-    import java.net.URI
-    import java.net.URISyntaxException
-    import java.util.ArrayList
-    import java.util.LinkedList
-    import java.util.List
-    import java.util.concurrent.Future
-    import java.util.concurrent.TimeUnit
-    import com.couchbase.client.CouchbaseClient
-    import com.couchbase.client.CouchbaseConnectionFactory
-    import com.couchbase.client.CouchbaseConnectionFactoryBuilder
-    import com.couchbase.client.protocol.views.Query
+    java_import java.io.IOException
+    java_import java.net.SocketAddress
+    java_import java.net.URI
+    java_import java.net.URISyntaxException
+    java_import java.util.ArrayList
+    java_import java.util.LinkedList
+    java_import java.util.List
+    java_import java.util.concurrent.Future
+    java_import java.util.concurrent.TimeUnit
+    java_import com.couchbase.client.CouchbaseClient
+    java_import com.couchbase.client.CouchbaseConnectionFactory
+    java_import com.couchbase.client.CouchbaseConnectionFactoryBuilder
+    java_import com.couchbase.client.protocol.views.Query
 
     include Couchbase::Operations
     include Couchbase::Async
@@ -167,14 +167,13 @@ module Couchbase
         instance_variable_set("@#{key}", value)
       end
 
-      @transcoder = case @default_format
-                    when :document
-                      Transcoder::Document
-                    when :marshal
-                      Transcoder::Marshal
-                    when :plain
-                      Transcoder::Plain
-                    end
+      @transcoders = {
+        document: Transcoder::Document.new,
+        marshal:  Transcoder::Marshal.new,
+        plain:    Transcoder::Plain.new
+      }
+
+      @transcoder = @transcoders[@default_format]
 
       connect unless async?
     end
@@ -196,7 +195,7 @@ module Couchbase
 
       begin
         builder = CouchbaseConnectionFactoryBuilder.new
-        builder.setTranscoder(Java::NetSpyMemcachedTranscoders::SerializingTranscoder.new)
+        builder.setTranscoder(@transcoder)
         connection_factory = builder.buildCouchbaseConnection(uris, bucket.to_java_string, password.to_java_string)
         @client = CouchbaseClient.new(connection_factory)
         @connected = true

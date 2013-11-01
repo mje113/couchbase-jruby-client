@@ -207,7 +207,7 @@ module Couchbase::Operations
                 end
 
         not_found_error(value.nil?, options)
-        value.nil? ? nil : load(value)
+        value.nil? ? nil : value
       end
     end
 
@@ -227,7 +227,7 @@ module Couchbase::Operations
         key, ttl = key.first
         value = client_get_and_touch(key, ttl)
         not_found_error(value.nil?)
-        { key => load(value) }
+        { key => value }
       end
     end
 
@@ -262,9 +262,9 @@ module Couchbase::Operations
       lock = options[:lock] == true ? 30 : options[:lock]
       cas = client.getAndLock(key, lock)
       if options[:extended]
-        [load(cas.getValue), nil, cas.getCas]
+        [cas.getValue, nil, cas.getCas]
       else
-        load cas.getValue
+        cas.getValue
       end
     end
 
@@ -274,7 +274,7 @@ module Couchbase::Operations
       if cas_value.nil?
         nil
       else
-        [load(cas_value.getValue), nil, cas_value.getCas]
+        [cas_value.getValue, nil, cas_value.getCas]
       end
     end
 
@@ -287,7 +287,7 @@ module Couchbase::Operations
     def transcode_multi_results(results)
       {}.tap do |new_results|
         results.each do |k, v|
-          new_results[k] = load(v)
+          new_results[k] = v
         end
       end
     end

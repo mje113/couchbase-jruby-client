@@ -21,60 +21,81 @@ module Couchbase
 
   module Transcoder
 
-    # module Compat
-    #   def self.enable!
-    #     @disabled = false
-    #   end
-
-    #   def self.disable!
-    #     @disabled = true
-    #   end
-
-    #   def self.enabled?
-    #     !@disabled
-    #   end
-
-    #   def self.guess_and_load(blob, flags, options = {})
-    #     case flags & Bucket::FMT_MASK
-    #     when Bucket::FMT_DOCUMENT
-    #       MultiJson.load(blob)
-    #     when Bucket::FMT_MARSHAL
-    #       ::Marshal.load(blob)
-    #     when Bucket::FMT_PLAIN
-    #       blob
-    #     else
-    #       raise ArgumentError, "unexpected flags (0x%02x)" % flags
-    #     end
-    #   end
-    # end
-
-    module Document
-      def self.dump(obj)
-        MultiJson.dump(obj)
+    module Compat
+      def self.enable!
+        @disabled = false
       end
 
-      def self.load(blob)
-        MultiJson.load(blob)
+      def self.disable!
+        @disabled = true
+      end
+
+      def self.enabled?
+        !@disabled
+      end
+
+      def self.guess_and_load(blob, flags, options = {})
+        case flags & Bucket::FMT_MASK
+        when Bucket::FMT_DOCUMENT
+          MultiJson.load(blob)
+        when Bucket::FMT_MARSHAL
+          ::Marshal.load(blob)
+        when Bucket::FMT_PLAIN
+          blob
+        else
+          raise ArgumentError, "unexpected flags (0x%02x)" % flags
+        end
       end
     end
 
-    module Marshal
-      def self.dump(obj)
-        ::Marshal.dump(obj)
+    class Base < Java::NetSpyMemcachedTranscoders::SerializingTranscoder
+    end
+
+    class Document < Base
+
+      def decode(d)
+        data = case decoded = super
+               when String
+                 decoded
+               else
+                 decoded.getData.to_s
+               end
+
+        MultiJson.load(data)
+      rescue MultiJson::LoadError
+        ::Marshal.load(data)
       end
 
-      def self.load(blob)
-        ::Marshal.load(blob)
+      def encode(o)
+        super MultiJson.dump(o)
+      rescue ArgumentError => e
+        ex = Couchbase::Error::ValueFormat.new
+        ex.inner_exception = e
+        fail ex
       end
     end
 
-    module Plain
-      def self.dump(obj)
-        obj
+    class Marshal < Base
+
+      def decode(d)
+        ::Marshal.load super.getData.to_s
       end
 
-      def self.load(blob)
-        blob
+      def encode(o)
+        super ::Marshal.dump(o)
+      end
+    end
+
+    class Plain < Base
+
+      def decode(d)
+        super
+      end
+
+      def encode(o)
+        super(o.to_str)
+      rescue NoMethodError
+        raise Couchbase::Error::ValueFormat
       end
     end
 

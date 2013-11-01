@@ -37,15 +37,5 @@ module Couchbase::Operations
       future.get && future.getCas
     end
 
-    public
-
-    def dump(obj)
-      transcoder.dump(obj)
-    end
-
-    def load(blob)
-      transcoder.load(blob)
-    end
-
   end
 end

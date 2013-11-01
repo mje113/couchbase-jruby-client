@@ -95,28 +95,19 @@ module Couchbase::Operations
     #     c.set("foo", "bar", :observe => {:persisted => 1})
     #
     def set(key, value = nil, options = {})
-      op, key, value, ttl = store_args_parser(key, value, options)
-
       if async?
         if block_given?
-          async_set(key, value, ttl, &Proc.new)
+          async_set(key, value, options, &Proc.new)
         else
-          async_set(key, value, ttl)
+          async_set(key, value, options)
         end
       else
-        sync_block_error if block_given?
-
-        if op == :single
-          set_single(key, value, ttl, options)
-        else
-          set_multi(key)
-        end
+        store_op(:set, key, value, options)
       end
     end
 
-    def async_set(key, value, ttl = 0)
-      future = client.set(key.to_s, ttl, dump(value))
-      register_future(future, { op: :set }, &Proc.new) if block_given?
+    def async_set(key, value, options, &block)
+      async_store_op(:set, key, value, options, &block)
     end
 
     def []=(key, *args)
@@ -176,28 +167,19 @@ module Couchbase::Operations
     #     c.add("foo", "bar", :observe => {:persisted => 1})
     #
     def add(key, value = nil, options = {})
-      op, key, value, ttl = store_args_parser(key, value, options)
-
       if async?
         if block_given?
-          async_add(key, value, ttl, &Proc.new)
+          async_add(key, value, options, &Proc.new)
         else
-          async_add(key, value, ttl)
+          async_add(key, value, options)
         end
       else
-        sync_block_error if block_given?
-
-        if op == :single
-          add_single(key, value, ttl, options)
-        else
-          add_multi(key)
-        end
+        store_op(:add, key, value, options)
       end
     end
 
-    def async_add(key, value, ttl)
-      future = client.add(key.to_s, ttl, dump(value))
-      register_future(future, { op: :add }, &Proc.new) if block_given?
+    def async_add(key, value, options, &block)
+      async_store_op(:add, key, value, options, &block)
     end
 
     # Replace the existing object in the database
@@ -242,19 +224,19 @@ module Couchbase::Operations
     #     c.replace("foo", "bar", :observe => {:persisted => 1})
     #
     def replace(key, value, options = {})
-      sync_block_error if !async? && block_given?
-
-      future = if options[:ttl].nil?
-                 client.replace(key.to_s, dump(value))
-               else
-                 client.replace(key.to_s, options[:ttl], dump(value))
-               end
-
-      if cas = future_cas(future)
-        cas
+      if async?
+        if block_given?
+          async_replcae(key, value, options, &Proc.new)
+        else
+          async_replcae(key, value, options)
+        end
       else
-        raise Couchbase::Error::NotFound.new
+        store_op(:replace, key, value, options)
       end
+    end
+
+    def async_replace(key, value, options, &block)
+      async_store_op(:replace, key, value, options, &block)
     end
 
     # Append this object to the existing object
@@ -399,76 +381,77 @@ module Couchbase::Operations
 
     def store_args_parser(key, value, options)
       key = key.to_str if key.respond_to?(:to_str)
-      ttl = options[:ttl] || default_ttl
+      ttl = options.delete(:ttl) || default_ttl
+      transcoder = @transcoders[options.delete(:format)] || @transcoder
 
-      op  = case key
-            when String, Symbol
-              :single
-            when Hash
-              raise TypeError.new if !value.nil?
-              :multi
-            else
-              raise TypeError.new
-            end
-
-      [op, key, value, ttl]
+      [key, value, ttl, transcoder]
     end
 
-    def set_single(key, value, ttl, options = {}, &block)
-      if options[:cas]
-        cas_response = client.cas(key.to_s, options[:cas], ttl, dump(value))
-        if cas_response.to_s == 'OK'
-          get(key, extended: true)[2]
+    def store_op(op, key, value, options)
+      sync_block_error if block_given?
+      key, value, ttl, transcoder = store_args_parser(key, value, options)
+
+      case key
+      when String, Symbol
+        key = key.to_s
+        if options[:cas] && op == :set
+          client_cas(key, value, ttl, options[:cas], transcoder)
         else
-          raise Couchbase::Error::KeyExists.new
+          future = client_store_op(op, key, value, ttl, transcoder)
+          if cas = future_cas(future)
+            cas
+          else
+            if op == :replace
+              fail Couchbase::Error::NotFound
+            else
+              fail Couchbase::Error::KeyExists
+            end
+          end
         end
+      when Hash
+        fail TypeError.new if !value.nil?
+        multi_op(op, key)
       else
-        if cas = client_set(key, value, ttl)
-          cas
-        else
-          raise Couchbase::Error::KeyExists.new
+        fail TypeError.new
+      end
+    end
+
+    def async_store_op(op, key, value, options, &block)
+      key, value, ttl, transcoder = store_args_parser(key, value, options)
+      future = client_store_op(op, key, value, ttl, transcoder)
+      register_future(future, { op: op }, &block)
+    end
+
+    def multi_op(op, keys)
+      {}.tap do |results|
+        keys.each_pair do |key, value|
+          results[key] = client.send(op, key, default_ttl, value)
         end
       end
     end
 
-    def add_single(key, value, ttl, options = {})
-      if cas = client_add(key, value, ttl)
-        cas
+    def client_store_op(op, key, value, ttl, transcoder)
+      case op
+      when :set
+        client.set(key, ttl, value, transcoder)
+      when :add
+        client.add(key, ttl, value, transcoder)
+      when :replace
+        client.replace(key, ttl, value, transcoder)
+      when :append
+        client.append(key, value)
+      when :prepend
+        client.prepend(key, value)
+      end
+    end
+
+    def client_cas(key, value, ttl, cas, transcoder)
+      cas_response = client.cas(key, cas, ttl, value, transcoder)
+      if cas_response.to_s == 'OK'
+        get(key, extended: true)[2]
       else
         raise Couchbase::Error::KeyExists.new
       end
-    end
-
-    # TODO:
-    def set_multi(keys)
-      {}.tap do |results|
-        keys.each_pair do |key, value|
-          results[key] = client_set(key, value, default_ttl)
-        end
-      end
-    end
-
-    def add_multi(keys)
-      {}.tap do |results|
-        keys.each_pair do |key, value|
-          results[key] = client_add(key, value, default_ttl)
-        end
-      end
-    end
-
-    def client_append(key, value)
-      future = client.append(key.to_s, dump(value))
-      future_cas(future)
-    end
-
-    def client_set(key, value, ttl)
-      future = client.set(key.to_s, ttl, dump(value))
-      future_cas(future)
-    end
-
-    def client_add(key, value, ttl)
-      future = client.add(key.to_s, ttl, dump(value))
-      future_cas(future)
     end
 
   end
