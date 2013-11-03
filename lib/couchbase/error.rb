@@ -36,5 +36,8 @@ module Couchbase
 
     class TemporaryFail < Base
     end
+
+    class NotStored < Base
+    end
   end
 end

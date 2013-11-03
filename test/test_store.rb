@@ -123,7 +123,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_it_raises_error_when_appending_or_prepending_to_missing_key
-    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
 
     assert_raises(Couchbase::Error::NotStored) do
@@ -136,7 +135,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_append
-    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :default_format => :plain)
 
     cas1 = connection.set(uniq_id, "foo")
@@ -150,7 +148,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_prepend
-    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :default_format => :plain)
 
     cas1 = connection.set(uniq_id, "foo")

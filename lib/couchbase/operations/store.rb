@@ -102,6 +102,7 @@ module Couchbase::Operations
           async_set(key, value, options)
         end
       else
+        sync_block_error if block_given?
         store_op(:set, key, value, options)
       end
     end
@@ -174,6 +175,7 @@ module Couchbase::Operations
           async_add(key, value, options)
         end
       else
+        sync_block_error if block_given?
         store_op(:add, key, value, options)
       end
     end
@@ -226,11 +228,12 @@ module Couchbase::Operations
     def replace(key, value, options = {})
       if async?
         if block_given?
-          async_replcae(key, value, options, &Proc.new)
+          async_replace(key, value, options, &Proc.new)
         else
-          async_replcae(key, value, options)
+          async_replace(key, value, options)
         end
       else
+        sync_block_error if block_given?
         store_op(:replace, key, value, options)
       end
     end
@@ -313,12 +316,8 @@ module Couchbase::Operations
     #     c.append("foo", "bar", :observe => {:persisted => 1})
     #
     def append(key, value)
-      sync_block_error if !async? && block_given?
-      if cas = java_append(validate_key(key), value)
-        cas
-      else
-        raise Couchbase::Error::NotFound.new
-      end
+      sync_block_error if block_given?
+      store_op(:append, key, value)
     end
 
     # Prepend this object to the existing object
@@ -373,8 +372,9 @@ module Couchbase::Operations
     #   @example Ensure that the key will be persisted at least on the one node
     #     c.prepend("foo", "bar", :observe => {:persisted => 1})
     #
-    def prepend(*args)
-      sync_block_error if !async? && block_given?
+    def prepend(key, value)
+      sync_block_error if block_given?
+      store_op(:prepend, key, value)
     end
 
     private
@@ -387,8 +387,7 @@ module Couchbase::Operations
       [key, value, ttl, transcoder]
     end
 
-    def store_op(op, key, value, options)
-      sync_block_error if block_given?
+    def store_op(op, key, value, options = {})
       key, value, ttl, transcoder = store_args_parser(key, value, options)
 
       case key
@@ -401,8 +400,11 @@ module Couchbase::Operations
           if cas = future_cas(future)
             cas
           else
-            if op == :replace
+            case op
+            when :replace
               fail Couchbase::Error::NotFound
+            when :append, :prepend
+              fail Couchbase::Error::NotStored
             else
               fail Couchbase::Error::KeyExists
             end

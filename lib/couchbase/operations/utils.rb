@@ -35,6 +35,9 @@ module Couchbase::Operations
 
     def future_cas(future)
       future.get && future.getCas
+    rescue Java::JavaLang::UnsupportedOperationException
+      # TODO: don't return fake cas
+      1
     end
 
   end

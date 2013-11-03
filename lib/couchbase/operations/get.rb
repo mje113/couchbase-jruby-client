@@ -143,7 +143,7 @@ module Couchbase::Operations
         when String, Symbol
           get_single(key, options)
         when Array
-          get_multi(key, options)
+          get_bulk(key, options)
         when Hash
           get_and_touch(key, options)
         end
@@ -154,11 +154,11 @@ module Couchbase::Operations
       get(key, options)
     end
 
-    def get_multi(keys, options)
+    def get_bulk(keys, options)
       results = if options[:extended]
-                  get_multi_extended(keys)
+                  get_bulk_extended(keys)
                 else
-                  client_get_multi(keys)
+                  client_get_bulk(keys)
                 end
 
       not_found_error(results.size != keys.size, options)
@@ -222,7 +222,7 @@ module Couchbase::Operations
 
     def get_and_touch(key, options = {})
       if key.size > 1
-        get_multi_and_touch(key, options)
+        get_bulk_and_touch(key, options)
       else
         key, ttl = key.first
         value = client_get_and_touch(key, ttl)
@@ -231,14 +231,14 @@ module Couchbase::Operations
       end
     end
 
-    def get_multi_and_touch(keys, options = {})
+    def get_bulk_and_touch(keys, options = {})
       options.merge!(assemble_hash: true)
-      results = get_multi(keys.keys, options)
+      results = get_bulk(keys.keys, options)
       touch(keys)
       results.to_hash
     end
 
-    def get_multi_extended(keys, options = {})
+    def get_bulk_extended(keys, options = {})
       {}.tap do |results|
         keys.each do |key|
           results[key] = get_extended(key, options)
@@ -278,7 +278,7 @@ module Couchbase::Operations
       end
     end
 
-    def client_get_multi(keys)
+    def client_get_bulk(keys)
       client.getBulk(keys)
     rescue java.lang.ClassCastException
       raise TypeError.new

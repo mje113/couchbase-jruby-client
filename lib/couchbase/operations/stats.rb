@@ -9,7 +9,17 @@ module Couchbase::Operations
                 client.getStats(statname)
               end
 
-      stats.first.last.to_hash
+      stats = stats.to_hash
+
+      {}.tap do |hash|
+        stats.each_pair do |node, values|
+          node_value = node.to_s
+          values.each_pair do |stat, value|
+            hash[stat] ||= {}
+            hash[stat][node_value] = value
+          end
+        end
+      end
     end
 
   end

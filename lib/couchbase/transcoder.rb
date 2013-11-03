@@ -21,33 +21,6 @@ module Couchbase
 
   module Transcoder
 
-    module Compat
-      def self.enable!
-        @disabled = false
-      end
-
-      def self.disable!
-        @disabled = true
-      end
-
-      def self.enabled?
-        !@disabled
-      end
-
-      def self.guess_and_load(blob, flags, options = {})
-        case flags & Bucket::FMT_MASK
-        when Bucket::FMT_DOCUMENT
-          MultiJson.load(blob)
-        when Bucket::FMT_MARSHAL
-          ::Marshal.load(blob)
-        when Bucket::FMT_PLAIN
-          blob
-        else
-          raise ArgumentError, "unexpected flags (0x%02x)" % flags
-        end
-      end
-    end
-
     class Base < Java::NetSpyMemcachedTranscoders::SerializingTranscoder
     end
 
