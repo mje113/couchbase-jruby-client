@@ -1,4 +1,4 @@
-# Couchbase::Jruby::Client
+# Couchbase JRuby Client
 
 Attempt to recreate the ruby Couchbase client api in JRuby and the
 Couchbase Java SDK.
