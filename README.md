@@ -1,6 +1,6 @@
 # Couchbase::Jruby::Client
 
-Attempt to recreate the ruby Couchbase cient api in Jruby and the
+Attempt to recreate the ruby Couchbase client api in JRuby and the
 Couchbase Java SDK.
 
 ## Installation
@@ -19,12 +19,14 @@ Or install it yourself as:
 
 ## Caveat
 
-Please consider this project a very incomplete "alpha" version at best.
-Most of your typical operations such as connecting to a Couchbase cluster, storing
-and retrieving documents are working, though I'm currently skeptical on the performance
-compared to the native Java SDK without this wrapper.
+Please consider this project a very incomplete "alpha" version at best. I'm getting close
+to full coverage, though there are still some missing features.  In fact, as I've gotten
+more familiar with the differences between the native ruby api and the java, there are 
+definitely some features that don't make sense to implement.
 
-## Usage (Copied from )
+Ultimately hoping to get to 100% support of the couchbase-ruby-model gem.
+
+## Usage (Copied from couchbase-ruby-client)
 
 First of all you need to load library:
 
