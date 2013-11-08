@@ -26,6 +26,9 @@ require 'couchbase/view_row'
 require 'couchbase/view'
 require 'couchbase/result'
 require 'couchbase/cluster'
+require 'couchbase/design_doc'
+require 'couchbase/view'
+require 'couchbase/query'
 
 include Java
 

@@ -162,7 +162,6 @@ module Couchbase::Operations
                 end
 
       not_found_error(results.size != keys.size, options)
-      results = transcode_multi_results(results) unless options[:extended]
 
       if options[:assemble_hash] || options[:extended]
         results
@@ -250,10 +249,6 @@ module Couchbase::Operations
       keys.map { |key| results[key] }
     end
 
-    # def client_get(key)
-    #   client.get(key)
-    # end
-
     def client_get_and_touch(key, ttl)
       client.getAndTouch(key, ttl).getValue
     end
@@ -283,14 +278,5 @@ module Couchbase::Operations
     rescue java.lang.ClassCastException
       raise TypeError.new
     end
-
-    def transcode_multi_results(results)
-      {}.tap do |new_results|
-        results.each do |k, v|
-          new_results[k] = v
-        end
-      end
-    end
-
   end
 end

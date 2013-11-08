@@ -14,7 +14,6 @@ module Couchbase
     java_import com.couchbase.client.CouchbaseClient
     java_import com.couchbase.client.CouchbaseConnectionFactory
     java_import com.couchbase.client.CouchbaseConnectionFactoryBuilder
-    java_import com.couchbase.client.protocol.views.Query
 
     include Couchbase::Operations
     include Couchbase::Async
@@ -326,116 +325,6 @@ module Couchbase
       end
     end
     alias :compare_and_swap :cas
-
-    # Fetch design docs stored in current bucket
-    #
-    # @since 1.2.0
-    #
-    # @return [Hash]
-    def design_docs
-      req = make_http_request("/pools/default/buckets/#{bucket}/ddocs",
-                              :type => :management, :extended => true)
-      docmap = {}
-      req.on_body do |body|
-        res = MultiJson.load(body.value)
-        res["rows"].each do |obj|
-          if obj['doc']
-            obj['doc']['value'] = obj['doc'].delete('json')
-          end
-          doc = DesignDoc.wrap(self, obj)
-          key = doc.id.sub(/^_design\//, '')
-          next if self.environment == :production && key =~ /dev_/
-            docmap[key] = doc
-        end
-        yield(docmap) if block_given?
-      end
-      req.continue
-      async? ? nil : docmap
-    end
-
-    # Update or create design doc with supplied views
-    #
-    # @since 1.2.0
-    #
-    # @param [Hash, IO, String] data The source object containing JSON
-    #   encoded design document. It must have +_id+ key set, this key
-    #   should start with +_design/+.
-    #
-    # @return [true, false]
-    def save_design_doc(data)
-      attrs = case data
-              when String
-                MultiJson.load(data)
-              when IO
-                MultiJson.load(data.read)
-              when Hash
-                data
-              else
-                raise ArgumentError, "Document should be Hash, String or IO instance"
-              end
-      rv = nil
-      id = attrs.delete('_id').to_s
-      attrs['language'] ||= 'javascript'
-      if id !~ /\A_design\//
-        rv = Result.new(:operation => :http_request,
-                        :key => id,
-                        :error => ArgumentError.new("'_id' key must be set and start with '_design/'."))
-        yield rv if block_given?
-        raise rv.error unless async?
-      end
-      req = make_http_request(id, :body => MultiJson.dump(attrs),
-                              :method => :put, :extended => true)
-      req.on_body do |res|
-        rv = res
-        val = MultiJson.load(res.value)
-        if block_given?
-          if res.success? && val['error']
-            res.error = Error::View.new("save_design_doc", val['error'])
-          end
-          yield(res)
-        end
-      end
-      req.continue
-      unless async?
-        rv.success? or raise res.error
-      end
-    end
-
-    # Delete design doc with given id and revision.
-    #
-    # @since 1.2.0
-    #
-    # @param [String] id Design document id. It might have '_design/'
-    #   prefix.
-    #
-    # @param [String] rev Document revision. It uses latest revision if
-    #   +rev+ parameter is nil.
-    #
-    # @return [true, false]
-    def delete_design_doc(id, rev = nil)
-      ddoc = design_docs[id.sub(/^_design\//, '')]
-      unless ddoc
-        yield nil if block_given?
-        return nil
-      end
-      path = Utils.build_query(ddoc.id, :rev => rev || ddoc.meta['rev'])
-      req = make_http_request(path, :method => :delete, :extended => true)
-      rv = nil
-      req.on_body do |res|
-        rv = res
-        val = MultiJson.load(res.value)
-        if block_given?
-          if res.success? && val['error']
-            res.error = Error::View.new("delete_design_doc", val['error'])
-          end
-          yield(res)
-        end
-      end
-      req.continue
-      unless async?
-        rv.success? or raise res.error
-      end
-    end
 
     # Delete contents of the bucket
     #
