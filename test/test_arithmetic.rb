@@ -134,7 +134,7 @@ class TestArithmetic < MiniTest::Test
     val = connection.decr(uniq_id, 12, :initial => 0, :ttl => exp)
     assert_equal 0, val
     assert_equal 0, connection.get(uniq_id)
-    sleep(2)
+    sleep(3)
     assert_raises(Couchbase::Error::NotFound) do
       connection.get(uniq_id)
     end
