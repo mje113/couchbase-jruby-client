@@ -114,7 +114,6 @@ class TestGet < MiniTest::Test
   end
 
   def test_missing_in_quiet_mode
-    skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :quiet => true)
     cas1 = connection.set(uniq_id(1), "foo1")
     cas2 = connection.set(uniq_id(2), "foo2")

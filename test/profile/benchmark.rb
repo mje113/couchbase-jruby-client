@@ -54,6 +54,7 @@ class Bench
       @k6 = "Long3" * 40]
 
     @cb = Couchbase.new
+    @cl = @cb.client
 
     # Ensure it is JITed
     2_000.times do
@@ -71,9 +72,9 @@ class Bench
       end
 
       x.report('java set') do
-        @cb.client.set(@k1, MultiJson.dump(@value)).get
-        @cb.client.set(@k2, MultiJson.dump(@value)).get
-        @cb.client.set(@k3, MultiJson.dump(@value)).get
+        @cl.set(@k1, MultiJson.dump(@value)).get
+        @cl.set(@k2, MultiJson.dump(@value)).get
+        @cl.set(@k3, MultiJson.dump(@value)).get
       end
 
       x.report('jruby get') do
@@ -83,9 +84,17 @@ class Bench
       end
 
       x.report('java get') do
-        MultiJson.load @cb.client.get(@k1)
-        MultiJson.load @cb.client.get(@k2)
-        MultiJson.load @cb.client.get(@k3)
+        MultiJson.load @cl.get(@k1)
+        MultiJson.load @cl.get(@k2)
+        MultiJson.load @cl.get(@k3)
+      end
+
+      x.report('jruby get multi') do
+        @cb.get([@k1, @k2, @k3])
+      end
+
+      x.report('java get multi') do
+        @cl.getBulk([@k1, @k2, @k3])
       end
 
       x.report('jruby delete') do
@@ -98,12 +107,12 @@ class Bench
       end
 
       x.report('java delete') do
-        @cb.set @k1, ''
-        @cb.set @k2, ''
-        @cb.set @k3, ''
-        @cb.client.delete @k1
-        @cb.client.delete @k2
-        @cb.client.delete @k3
+        @cl.set @k1, ''
+        @cl.set @k2, ''
+        @cl.set @k3, ''
+        @cl.delete @k1
+        @cl.delete @k2
+        @cl.delete @k3
       end
 
       x.report('jruby get missing') do
@@ -113,50 +122,50 @@ class Bench
       end
 
       x.report('java get missing') do
-        @cb.client.get @k1
-        @cb.client.get @k2
-        @cb.client.get @k3
+        @cl.get @k1
+        @cl.get @k2
+        @cl.get @k3
       end
 
-      x.report('jruby async set') do
-        @cb.run do
-          100.times do
-            @cb.set @k1, @value
-            @cb.set @k2, @value
-            @cb.set @k3, @value
-          end
-        end
-      end
+      # x.report('jruby async set') do
+      #   @cb.run do
+      #     100.times do
+      #       @cb.set @k1, @value
+      #       @cb.set @k2, @value
+      #       @cb.set @k3, @value
+      #     end
+      #   end
+      # end
 
-      x.report('java async set') do
-        futures = []
-        100.times do
-          futures << @cb.client.set(@k1, MultiJson.dump(@value))
-          futures << @cb.client.set(@k2, MultiJson.dump(@value))
-          futures << @cb.client.set(@k3, MultiJson.dump(@value))
-        end
-        futures.each(&:get)
-      end
+      # x.report('java async set') do
+      #   futures = []
+      #   100.times do
+      #     futures << @cb.client.set(@k1, MultiJson.dump(@value))
+      #     futures << @cb.client.set(@k2, MultiJson.dump(@value))
+      #     futures << @cb.client.set(@k3, MultiJson.dump(@value))
+      #   end
+      #   futures.each(&:get)
+      # end
 
-      x.report('jruby async get') do
-        @cb.run do
-          100.times do
-            @cb.get @k1
-            @cb.get @k2
-            @cb.get @k3
-          end
-        end
-      end
+      # x.report('jruby async get') do
+      #   @cb.run do
+      #     100.times do
+      #       @cb.get @k1
+      #       @cb.get @k2
+      #       @cb.get @k3
+      #     end
+      #   end
+      # end
 
-      x.report('java async get') do
-        futures = []
-        100.times do
-          futures << @cb.client.asyncGet(@k1)
-          futures << @cb.client.asyncGet(@k2)
-          futures << @cb.client.asyncGet(@k3)
-        end
-        futures.each(&:get)
-      end
+      # x.report('java async get') do
+      #   futures = []
+      #   100.times do
+      #     futures << @cb.client.asyncGet(@k1)
+      #     futures << @cb.client.asyncGet(@k2)
+      #     futures << @cb.client.asyncGet(@k3)
+      #   end
+      #   futures.each(&:get)
+      # end
 
     end
 

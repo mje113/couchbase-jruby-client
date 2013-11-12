@@ -128,25 +128,19 @@ module Couchbase::Operations
     #     c.get("foo" => 10, "bar" => 20, :lock => true)
     #     #=> {"foo" => val1, "bar" => val2}
     #
-    def get(*args)
+    def get(*args, &block)
       key, options = expand_get_args(args)
 
       if async?
-        if block_given?
-          async_get(key, &Proc.new)
-        else
-          async_get(key)
-        end
+        async_get(key, &block)
+        # if block_given?
+        #   async_get(key, &Proc.new)
+        # else
+        #   async_get(key)
+        # end
       else
         sync_block_error if block_given?
-        case key
-        when String, Symbol
-          get_single(key, options)
-        when Array
-          get_bulk(key, options)
-        when Hash
-          get_and_touch(key, options)
-        end
+        get_key(key, options)
       end
     end
 
@@ -177,7 +171,7 @@ module Couchbase::Operations
         future = client.asyncGet(key)
       when Array
         meta = { op: :get }
-        future = client.asyncGetBulk(keys)
+        future = client.asyncGetBulk(key)
       when Hash
         # async_get_and_touch(key, options, &block)
       end
@@ -185,6 +179,17 @@ module Couchbase::Operations
     end
 
     private
+
+    def get_key(key, options)
+      case key
+      when String, Symbol
+        get_single(key, options)
+      when Array
+        get_bulk(key, options)
+      when Hash
+        get_and_touch(key, options)
+      end
+    end
 
     def expand_get_args(args)
       options = extract_options_hash(args)

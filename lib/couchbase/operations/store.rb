@@ -1,6 +1,14 @@
 module Couchbase::Operations
   module Store
 
+    STORE_OP_METHODS = {
+      set:     -> client, key, value, ttl, transcoder { client.set(key, ttl, value, transcoder) },
+      add:     -> client, key, value, ttl, transcoder { client.add(key, ttl, value, transcoder) },
+      replace: -> client, key, value, ttl, transcoder { client.replace(key, ttl, value, transcoder) },
+      append:  -> client, key, value, ttl, transcoder { client.append(key, value) },
+      prepend: -> client, key, value, ttl, transcoder { client.prepend(key, value) }
+    }.freeze
+
     # Unconditionally store the object in the Couchbase
     #
     # @since 1.0.0
@@ -390,32 +398,31 @@ module Couchbase::Operations
     def store_op(op, key, value, options = {})
       key, value, ttl, transcoder = store_args_parser(key, value, options)
 
-      case key
-      when String, Symbol
-        key = key.to_s
-        if options[:cas] && op == :set
-          client_cas(key, value, ttl, options[:cas], transcoder)
-        else
-          future = client_store_op(op, key, value, ttl, transcoder)
-          if cas = future_cas(future)
-            cas
-          else
-            case op
-            when :replace
-              fail Couchbase::Error::NotFound
-            when :append, :prepend
-              fail Couchbase::Error::NotStored
-            else
-              fail Couchbase::Error::KeyExists
-            end
-          end
-        end
-      when Hash
-        fail TypeError.new if !value.nil?
-        multi_op(op, key)
+      if key.is_a?(String) || key.is_a?(Symbol)
+        store_by_string(op, key.to_s, value, ttl, transcoder, options)
+      elsif key.is_a?(Hash)
+        store_by_hash(op, key, value)
       else
         fail TypeError.new
       end
+    end
+
+    def store_by_string(op, key, value, ttl, transcoder, options)
+      if options[:cas] && op == :set
+        client_cas(key, value, ttl, options[:cas], transcoder)
+      else
+        future = client_store_op(op, key, value, ttl, transcoder)
+        if cas = future_cas(future)
+          cas
+        else
+          fail_store_op(op)
+        end
+      end
+    end
+
+    def store_by_hash(op, key, value)
+      fail TypeError.new if !value.nil?
+      multi_op(op, key)
     end
 
     def async_store_op(op, key, value, options, &block)
@@ -433,18 +440,7 @@ module Couchbase::Operations
     end
 
     def client_store_op(op, key, value, ttl, transcoder)
-      case op
-      when :set
-        client.set(key, ttl, value, transcoder)
-      when :add
-        client.add(key, ttl, value, transcoder)
-      when :replace
-        client.replace(key, ttl, value, transcoder)
-      when :append
-        client.append(key, value)
-      when :prepend
-        client.prepend(key, value)
-      end
+      STORE_OP_METHODS[op].call(self.client, key, value, ttl, transcoder)
     end
 
     def client_cas(key, value, ttl, cas, transcoder)
@@ -453,6 +449,17 @@ module Couchbase::Operations
         get(key, extended: true)[2]
       else
         raise Couchbase::Error::KeyExists.new
+      end
+    end
+
+    def fail_store_op(op)
+      case op
+      when :replace
+        fail Couchbase::Error::NotFound
+      when :append, :prepend
+        fail Couchbase::Error::NotStored
+      else
+        fail Couchbase::Error::KeyExists
       end
     end
 
