@@ -211,6 +211,7 @@ class TestBucket < MiniTest::Test
   end
 
   def test_it_converts_options_keys_to_symbols
+    skip
     bucket = Couchbase::Bucket.new('bucket' => 'notdefault', 'hostname' => 'example.com', 'async' => true)
     assert_equal 'notdefault',  bucket.bucket
     assert_equal 'example.com', bucket.hostname

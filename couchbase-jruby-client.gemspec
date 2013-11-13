@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_runtime_dependency 'multi_json',    '~> 1.0'
-  s.add_runtime_dependency 'atomic',        '~> 1.1.14'
+  s.add_runtime_dependency 'thread_safe',   '~> 0.1.2'
 
   s.add_development_dependency 'bundler',   '~> 1.3'
   s.add_development_dependency 'rake'

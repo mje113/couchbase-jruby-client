@@ -156,27 +156,33 @@ class CouchbaseMock
   end
 end
 
+require 'ostruct'
+
 class MiniTest::Test
 
   def start_mock(params = {})
-    mock = nil
-    if true # ENV['COUCHBASE_SERVER']
-      mock = CouchbaseServer.new(params)
-      if (params[:port] && mock.port != params[:port]) ||
-        (params[:host] && mock.host != params[:host]) ||
-        mock.buckets_spec != "default:"
-        skip("Unable to configure real cluster. Requested config is: #{params.inspect}")
-      end
-    else
-      mock = CouchbaseMock.new(params)
-    end
-    mock.start
-    mock
+    OpenStruct.new(
+      host: 'localhost',
+      port: '8091'
+    )
+    # mock = nil
+    # if true # ENV['COUCHBASE_SERVER']
+    #   mock = CouchbaseServer.new(params)
+    #   if (params[:port] && mock.port != params[:port]) ||
+    #     (params[:host] && mock.host != params[:host]) ||
+    #     mock.buckets_spec != "default:"
+    #     skip("Unable to configure real cluster. Requested config is: #{params.inspect}")
+    #   end
+    # else
+    #   mock = CouchbaseMock.new(params)
+    # end
+    # mock.start
+    # mock
   end
 
   def stop_mock(mock)
-    assert(mock)
-    mock.stop
+    # assert(mock)
+    # mock.stop
   end
 
   def with_mock(params = {})

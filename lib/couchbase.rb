@@ -30,7 +30,7 @@ require 'jars/spymemcached-2.10.0.jar'
 require 'jars/httpcore-nio-4.1.1.jar'
 require 'couchbase/version'
 require 'uri'
-require 'atomic'
+require 'thread_safe'
 require 'couchbase/transcoder'
 require 'couchbase/async'
 require 'couchbase/operations'
@@ -57,7 +57,7 @@ end
 # Couchbase jruby client
 module Couchbase
 
-  @@buckets = Atomic.new({})
+  @@buckets = ThreadSafe::Cache.new
 
   class << self
 
@@ -85,9 +85,6 @@ module Couchbase
     # @return [Bucket] connection instance
     def connect(*options)
       Bucket.new(*(options.flatten))
-      # disconnect
-      # @@bucket.update { |bucket| bucket ||= Bucket.new(*(options.flatten)) }
-      # @@bucket.value
     end
     alias :new :connect
 
@@ -100,7 +97,15 @@ module Couchbase
     #   Couchbase.bucket.name     #=> "blog"
     #
     # @return [Hash, String]
-    attr_accessor :connection_options
+    attr_reader :connection_options
+
+    def connection_options=(options)
+      @connection_options = normalize_connection_options(options)
+    end
+
+    def normalize_connection_options(options)
+      Hash[ options.map { |k, v| [k.to_sym, v] } ]
+    end
 
     # The connection instance for current thread
     #
@@ -143,10 +148,10 @@ module Couchbase
                  path = URI.parse(@connection_options).path
                  path[%r(^(/pools/([A-Za-z0-9_.-]+)(/buckets/([A-Za-z0-9_.-]+))?)?), 3] || "default"
                else
-                 "default"
+                 'default'
                end
-      @@buckets.update { |buckets| buckets[name] ||= connect(connection_options.merge(bucket: name)) }
-      @@buckets.value[name]
+
+      @@buckets[name] ||= connect(connection_options.merge(bucket: name))
     end
 
     # Set a connection instance for current thread
@@ -155,18 +160,20 @@ module Couchbase
     #
     # @return [Bucket]
     def bucket=(connection)
-      name ||= @connection_options && @connection_options[:bucket] || "default"
-      @@buckets.update { |buckets| buckets[name] = connection }
-      @@buckets.value[name]
+      name = @connection_options && @connection_options[:bucket] || "default"
+      @@buckets[name] = connection
     end
 
     def connected?
-      !!@@buckets.value.empty?
+      !!@@buckets.empty?
     end
 
     def disconnect
-      @@buckets.value.each(&:disconnect) if connected?
-      @@buckets = Atomic.new({})
+      @@buckets.each_key do |name|
+        bucket = @@buckets.delete(name)
+        binding.pry
+        bucket.disconnect if connected?
+      end
     end
   end
 end

@@ -148,7 +148,7 @@ module Couchbase
         default_arithmetic_init:   0,
         default_flags:             0,
         default_format:            :document,
-        default_observe_timeout:   2500000,
+        default_observe_timeout:   2_500_000,
         on_error:                  nil,
         on_connect:                nil,
         timeout:                   0,
@@ -164,20 +164,16 @@ module Couchbase
 
       url_options = if url.is_a? String
                       fail ArgumentError.new unless url =~ /^http:\/\//
-
                       uri = URI.new(url)
-
-                      {
-                        host: uri.host,
-                        port: uri.port,
-                      }.merge(path_to_pool_and_bucket(uri.path))
+                      { host: uri.host, port: uri.port }.
+                        merge(path_to_pool_and_bucket(uri.path))
                     elsif url.nil?
                       {}
                     else
                       url
                     end
 
-      options = Hash[ options.map { |k, v| [k.to_sym, v] } ]
+      # options = Couchbase.normalize_connection_options(options)
 
       connection_options = default_options.merge(options).merge(url_options)
 
