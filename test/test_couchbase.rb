@@ -26,4 +26,11 @@ class TestCouchbase < MiniTest::Test
     end
   end
 
+  def test_global_bucket_access
+    with_mock do |mock|
+      assert_instance_of Couchbase::Bucket, Couchbase.bucket
+      assert_equal Couchbase.bucket, Couchbase.bucket
+    end
+  end
+
 end

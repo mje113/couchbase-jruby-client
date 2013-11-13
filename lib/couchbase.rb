@@ -145,7 +145,7 @@ module Couchbase
                else
                  "default"
                end
-      @@buckets.update { |buckets| buckets[name] ||= connect(connection_options) }
+      @@buckets.update { |buckets| buckets[name] ||= connect(connection_options.merge(bucket: name)) }
       @@buckets.value[name]
     end
 

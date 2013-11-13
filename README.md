@@ -21,12 +21,15 @@ Or install it yourself as:
 
 Please consider this project a very incomplete "alpha" version at best. I'm getting close
 to full coverage, though there are still some missing features.  In fact, as I've gotten
-more familiar with the differences between the native ruby api and the java, there are 
+more familiar with the differences between the native ruby api and the java, there are
 definitely some features that don't make sense to implement.
 
 Ultimately hoping to get to 100% support of the couchbase-ruby-model gem.
 
-## Usage (Copied from couchbase-ruby-client)
+## Usage
+
+See https://github.com/couchbase/couchbase-ruby-client for usage instructions as
+they are largely the same. Important bits copied below:
 
 First of all you need to load library:
 
@@ -66,89 +69,6 @@ connection options via `Couchbase.connection_options`:
     Couchbase.connection_options = {:bucket => 'blog'}
     Couchbase.bucket.name                   #=> "blog"
     Couchbase.bucket.set("foo", "bar")      #=> 3289400178357895424
-
-The library supports both synchronous and asynchronous mode. In
-asynchronous mode all operations will return control to caller
-without blocking current thread. You can pass the block to method and it
-will be called with result when the operation will be completed. You
-need to run event loop when you scheduled your operations:
-
-    c = Couchbase.connect
-    c.run do |conn|
-      conn.get("foo") {|ret| puts ret.value}
-      conn.set("bar", "baz")
-    end
-
-The handlers could be nested
-
-    c.run do |conn|
-      conn.get("foo") do |ret|
-        conn.incr(ret.value, :initial => 0)
-      end
-    end
-
-The asynchronous callback receives instance of `Couchbase::Result` which
-responds to several methods to figure out what was happened:
-
-  * `success?`. Returns `true` if operation succed.
-
-  * `error`. Returns `nil` or exception object (subclass of
-    `Couchbase::Error::Base`) if something went wrong.
-
-  * `key`
-
-  * `value`
-
-  * `flags`
-
-  * `cas`. The CAS version tag.
-
-  * `node`. Node address. It is used in flush and stats commands.
-
-  * `operation`. The symbol, representing an operation.
-
-
-To handle global errors in async mode `#on_error` callback should be
-used. It can be set in following fashions:
-
-    c.on_error do |opcode, key, exc|
-      # ...
-    end
-
-    handler = lambda {|opcode, key, exc| }
-    c.on_error = handler
-
-By default connection uses `:quiet` mode. This mean it won't raise
-exceptions when the given key is not exists:
-
-    c.get("missing-key")            #=> nil
-
-It could be useful when you are trying to make you code a bit efficient
-by avoiding exception handling. (See `#add` and `#replace` operations).
-You can turn on these exception by passing `:quiet => false` when you
-are instantiating the connection or change corresponding attribute:
-
-    c.quiet = false
-    c.get("missing-key")                    #=> raise Couchbase::Error::NotFound
-    c.get("missing-key", :quiet => true)    #=> nil
-
-The library supports three different formats for representing values:
-
-* `:document` (default) format supports most of ruby types which could
-  be mapped to JSON data (hashes, arrays, string, numbers). A future
-  version will be able to run map/reduce queries on the values in the
-  document form (hashes)
-
-* `:plain` This format avoids any conversions to be applied to your
-  data, but your data should be passed as String. This is useful for
-  building custom algorithms or formats. For example to implement a set:
-  http://dustin.github.com/2011/02/17/memcached-set.html
-
-* `:marshal` Use this format if you'd like to transparently serialize your
-  ruby object with standard `Marshal.dump` and `Marshal.load` methods
-
-The couchbase API is the superset of [Memcached binary protocol][5], so
-you can use its operations.
 
 ### Get
 
