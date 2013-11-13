@@ -27,8 +27,8 @@ module Couchbase
     class Document < Base
 
       def decode(d)
-        data = case decoded = super
-               when String
+        decoded = super
+        data = if decoded.respond_to?(:to_str)
                  decoded
                else
                  decoded.getData.to_s

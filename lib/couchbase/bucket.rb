@@ -160,6 +160,8 @@ module Couchbase
                       url
                     end
 
+      options = Hash[ options.map { |k, v| [k.to_sym, v] } ]
+
       connection_options = default_options.merge(options).merge(url_options)
 
       connection_options.each_pair do |key, value|
