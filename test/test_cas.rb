@@ -19,34 +19,22 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestCas < MiniTest::Test
 
-  def setup
-    @mock = start_mock
-  end
-
-  def teardown
-    stop_mock(@mock)
-  end
-
   def test_compare_and_swap
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port,
-                               :default_format => :document)
-    connection.set(uniq_id, {"bar" => 1})
-    connection.cas(uniq_id) do |val|
+    cb.set(uniq_id, {"bar" => 1})
+    cb.cas(uniq_id) do |val|
       val["baz"] = 2
       val
     end
-    val = connection.get(uniq_id)
+    val = cb.get(uniq_id)
     expected = {"bar" => 1, "baz" => 2}
     assert_equal expected, val
   end
 
   def test_compare_and_swap_async
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port,
-                               :default_format => :document)
-    connection.set(uniq_id, {"bar" => 1})
+    cb.set(uniq_id, {"bar" => 1})
     calls = 0
-    connection.run do |conn|
+    cb.run do |conn|
       conn.cas(uniq_id) do |ret|
         calls += 1
         case ret.operation
@@ -62,18 +50,16 @@ class TestCas < MiniTest::Test
       end
     end
     assert_equal 2, calls
-    val = connection.get(uniq_id)
+    val = cb.get(uniq_id)
     expected = {"bar" => 1, "baz" => 2}
     assert_equal expected, val
   end
 
   def test_flags_replication
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port,
-                               :default_format => :document)
-    connection.set(uniq_id, "bar", :flags => 0x100)
-    connection.cas(uniq_id) { "baz" }
-    _, flags, _ = connection.get(uniq_id, :extended => true)
+    cb.set(uniq_id, "bar", :flags => 0x100)
+    cb.cas(uniq_id) { "baz" }
+    _, flags, _ = cb.get(uniq_id, :extended => true)
     assert_equal 0x100, flags
   end
 end

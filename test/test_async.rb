@@ -19,14 +19,6 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestAsync < MiniTest::Test
 
-  def setup
-    @mock = start_mock
-  end
-
-  def teardown
-    stop_mock(@mock)
-  end
-
   def test_result_object_provides_enough_info
     obj = Couchbase::Result.new
     assert obj.respond_to?(:success?)
@@ -38,33 +30,29 @@ class TestAsync < MiniTest::Test
   end
 
   def test_it_requires_block_for_running_loop
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    refute connection.async?
+    refute cb.async?
     assert_raises(LocalJumpError) do
-      connection.run
+      cb.run
     end
-    connection.run do |conn|
+    cb.run do |conn|
       assert conn.async?
     end
   end
 
   def test_it_resets_async_flag_when_raising_exception_from_callback
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-
     assert_raises(RuntimeError) do
-      connection.run do |conn|
+      cb.run do |conn|
         conn.set(uniq_id, "foo") { raise }
       end
     end
-    refute connection.async?
+    refute cb.async?
   end
 
   def test_nested_async_get_set
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    connection.set(uniq_id, {"bar" => 1})
-    connection.set(uniq_id(:hit), 0)
+    cb.set(uniq_id, {"bar" => 1})
+    cb.set(uniq_id(:hit), 0)
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.get(uniq_id) do
         conn.get(uniq_id(:hit)) do |res|
           conn.set(uniq_id(:hit), res.value + 1)
@@ -72,15 +60,14 @@ class TestAsync < MiniTest::Test
       end
     end
 
-    val = connection.get(uniq_id(:hit))
+    val = cb.get(uniq_id(:hit))
     assert_equal 1, val
   end
 
   def test_nested_async_set_get
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     val = nil
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.set(uniq_id, "foo") do
         conn.get(uniq_id) do |res|
           val = res.value
@@ -92,12 +79,11 @@ class TestAsync < MiniTest::Test
   end
 
   def test_nested_async_touch_get
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    connection.set(uniq_id, "foo")
+    cb.set(uniq_id, "foo")
     success = false
     val = nil
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.touch(uniq_id, :ttl => 1) do |res1|
         success = res1.success?
         conn.get(uniq_id) do |res2|
@@ -110,17 +96,16 @@ class TestAsync < MiniTest::Test
     assert_equal "foo", val
     sleep(2)
     assert_raises(Couchbase::Error::NotFound) do
-      connection.get(uniq_id)
+      cb.get(uniq_id)
     end
   end
 
   def test_nested_async_delete_get
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    cas = connection.set(uniq_id, "foo")
+    cas = cb.set(uniq_id, "foo")
     success = false
     val = :unknown
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.delete(uniq_id, :cas => cas) do |res1|
         success = res1.success?
         conn.get(uniq_id, :quiet => true) do |res2|
@@ -135,10 +120,9 @@ class TestAsync < MiniTest::Test
 
   def test_nested_async_stats_set
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     stats = {}
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.stats do |res1|
         id = uniq_id(res1.node, res1.key)
         stats[id] = false
@@ -155,41 +139,35 @@ class TestAsync < MiniTest::Test
 
   def test_nested_async_flush_set
     skip
-    if @mock.real?
-      connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-      cas = connection.set(uniq_id, "foo")
-      res = {}
+    cas = cb.set(uniq_id, "foo")
+    res = {}
 
-      connection.run do |conn|
-        conn.flush do |res1|
-          assert res1.success?, "Expected: successful status code.\nActual: #{res1.error.inspect}"
-          id = uniq_id(res1.node)
-          res[id] = false
-          conn.set(id, true) do |res2|
-            res[id] = res2.cas
-          end
+    cb.run do |conn|
+      conn.flush do |res1|
+        assert res1.success?, "Expected: successful status code.\nActual: #{res1.error.inspect}"
+        id = uniq_id(res1.node)
+        res[id] = false
+        conn.set(id, true) do |res2|
+          res[id] = res2.cas
         end
       end
+    end
 
-      assert_raises(Couchbase::Error::NotFound) do
-        connection.get(uniq_id)
-      end
-      res.keys.each do |key|
-        assert res[key].is_a?(Numeric)
-        assert connection.get(key)
-      end
-    else
-      skip("REST FLUSH isn't implemented in CouchbaseMock.jar yet")
+    assert_raises(Couchbase::Error::NotFound) do
+      cb.get(uniq_id)
+    end
+    res.keys.each do |key|
+      assert res[key].is_a?(Numeric)
+      assert cb.get(key)
     end
   end
 
   def test_nested_async_incr_get
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    cas = connection.set(uniq_id, 1)
+    cas = cb.set(uniq_id, 1)
     val = nil
 
-    connection.run do |conn|
+    cb.run do |conn|
       conn.incr(uniq_id) do
         conn.get(uniq_id) do |res|
           val = res.value
@@ -201,28 +179,26 @@ class TestAsync < MiniTest::Test
   end
 
   def test_it_doesnt_accept_callbacks_in_synchronous_mode
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    refute connection.async?
+    refute cb.async?
 
-    assert_raises(ArgumentError) { connection.add(uniq_id, "foo") {} }
-    assert_raises(ArgumentError) { connection.set(uniq_id, "foo") {} }
-    assert_raises(ArgumentError) { connection.replace(uniq_id, "foo") {} }
-    assert_raises(ArgumentError) { connection.get(uniq_id) {} }
-    assert_raises(ArgumentError) { connection.touch(uniq_id) {} }
-    assert_raises(ArgumentError) { connection.incr(uniq_id) {} }
-    assert_raises(ArgumentError) { connection.decr(uniq_id) {} }
-    assert_raises(ArgumentError) { connection.delete(uniq_id) {} }
-    assert_raises(ArgumentError) { connection.append(uniq_id, "bar") {} }
-    assert_raises(ArgumentError) { connection.prepend(uniq_id, "bar") {} }
-    assert_raises(ArgumentError) { connection.flush {} }
-    assert_raises(ArgumentError) { connection.stats {} }
+    assert_raises(ArgumentError) { cb.add(uniq_id, "foo") {} }
+    assert_raises(ArgumentError) { cb.set(uniq_id, "foo") {} }
+    assert_raises(ArgumentError) { cb.replace(uniq_id, "foo") {} }
+    assert_raises(ArgumentError) { cb.get(uniq_id) {} }
+    assert_raises(ArgumentError) { cb.touch(uniq_id) {} }
+    assert_raises(ArgumentError) { cb.incr(uniq_id) {} }
+    assert_raises(ArgumentError) { cb.decr(uniq_id) {} }
+    assert_raises(ArgumentError) { cb.delete(uniq_id) {} }
+    assert_raises(ArgumentError) { cb.append(uniq_id, "bar") {} }
+    assert_raises(ArgumentError) { cb.prepend(uniq_id, "bar") {} }
+    assert_raises(ArgumentError) { cb.flush {} }
+    assert_raises(ArgumentError) { cb.stats {} }
   end
 
   def test_it_disallow_nested_run
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     assert_raises(Couchbase::Error::Invalid) do
-      connection.run do
-        connection.run do
+      cb.run do
+        cb.run do
         end
       end
     end
@@ -230,12 +206,11 @@ class TestAsync < MiniTest::Test
 
   def test_it_extends_timeout_in_async_mode_if_needed
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    connection.set(uniq_id, "foo")
+    cb.set(uniq_id, "foo")
 
-    connection.timeout = 100_000  # 100_000 us
-    connection.run do
-      connection.get(uniq_id) do |ret|
+    cb.timeout = 100_000  # 100_000 us
+    cb.run do
+      cb.get(uniq_id) do |ret|
         assert ret.success?
         assert_equal "foo", ret.value
       end
@@ -245,11 +220,9 @@ class TestAsync < MiniTest::Test
 
   def test_send_threshold
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-
     sent = false
-    connection.run(:send_threshold => 100) do # 100 bytes
-      connection.set(uniq_id, "foo" * 100) {|r| sent = true}
+    cb.run(:send_threshold => 100) do # 100 bytes
+      cb.set(uniq_id, "foo" * 100) {|r| sent = true}
       assert sent
     end
   end
@@ -257,27 +230,26 @@ class TestAsync < MiniTest::Test
   def test_asynchronous_connection
     skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :async => true)
-    refute connection.connected?, "new asynchronous connection must be disconnected"
-    connection.on_connect do |res|
+    refute cb.connected?, "new asynchronous connection must be disconnected"
+    cb.on_connect do |res|
       assert res.success?, "on_connect called with error #{res.error.inspect}"
       assert_same connection, res.bucket
     end
-    connection.run {}
-    assert connection.connected?, "it should be connected after first run"
+    cb.run {}
+    assert cb.connected?, "it should be connected after first run"
   end
 
   def test_it_calls_callback_immediately_if_connected_sync
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    assert connection.connected?, "connection wasn't established in sync mode"
+    assert cb.connected?, "connection wasn't established in sync mode"
     called = false
-    connection.on_connect do |res|
+    cb.on_connect do |res|
       assert res.success?, "on_connect called with error #{res.error.inspect}"
       called = true
     end
     assert called, "the callback hasn't been called on set"
     called = false
-    connection.on_connect do |res|
+    cb.on_connect do |res|
       assert res.success?, "on_connect called with error #{res.error.inspect}"
       called = true
     end
@@ -287,20 +259,20 @@ class TestAsync < MiniTest::Test
   def test_it_calls_callback_immediately_if_connected_async
     skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :async => true)
-    refute connection.connected?, "new asynchronous connection must be disconnected"
+    refute cb.connected?, "new asynchronous connection must be disconnected"
     called = false
-    connection.run {}
-    assert connection.connected?, "the connection must be established"
-    connection.run do
-      connection.on_connect do |res|
+    cb.run {}
+    assert cb.connected?, "the connection must be established"
+    cb.run do
+      cb.on_connect do |res|
         assert res.success?, "on_connect called with error #{res.error.inspect}"
         called = true
       end
     end
     assert called, "the callback hasn't been called on set"
     called = false
-    connection.run do
-      connection.on_connect do |res|
+    cb.run do
+      cb.on_connect do |res|
         assert res.success?, "on_connect called with error #{res.error.inspect}"
         called = true
       end
@@ -311,12 +283,12 @@ class TestAsync < MiniTest::Test
   def test_it_returns_error_if_user_start_work_on_disconnected_instance_outside_on_connect_callback
     skip
     connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :async => true)
-    refute connection.connected?, "new asynchronous connection must be disconnected"
+    refute cb.connected?, "new asynchronous connection must be disconnected"
     error = nil
-    connection.on_error do |ex|
+    cb.on_error do |ex|
       error = ex
     end
-    connection.run do |c|
+    cb.run do |c|
       c.set("foo", "bar")
     end
     assert_instance_of(Couchbase::Error::Connect, error)

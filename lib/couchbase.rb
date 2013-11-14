@@ -151,7 +151,7 @@ module Couchbase
                  'default'
                end
 
-      @@buckets[name] ||= connect(connection_options.merge(bucket: name))
+      @@buckets[name] ||= connect(connection_options)
     end
 
     # Set a connection instance for current thread
@@ -171,7 +171,6 @@ module Couchbase
     def disconnect
       @@buckets.each_key do |name|
         bucket = @@buckets.delete(name)
-        binding.pry
         bucket.disconnect if connected?
       end
     end

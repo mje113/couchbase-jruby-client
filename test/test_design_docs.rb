@@ -19,38 +19,28 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestDesignDocs < MiniTest::Test
 
-  def setup
-    @mock = start_mock
-    @cb = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-  end
-
-  def teardown
-    stop_mock(@mock)
-    @cb.disconnect
-  end
-
   def test_save_design_doc
-    assert @cb.save_design_doc(design_doc)
+    assert cb.save_design_doc(design_doc)
   end
 
   def test_save_design_doc_with_bad_data
     assert_raises ArgumentError do
-      @cb.save_design_doc(123)
+      cb.save_design_doc(123)
     end
   end
 
   def test_delete_design_doc
-    @cb.save_design_doc(design_doc)
-    assert @cb.delete_design_doc('blog')
+    cb.save_design_doc(design_doc)
+    assert cb.delete_design_doc('blog')
   end
 
   def test_design_doc_access
-    @cb.save_design_doc(design_doc)
-    assert @cb.design_docs['blog']
+    cb.save_design_doc(design_doc)
+    assert cb.design_docs['blog']
   end
 
   def test_design_doc_missing_access
-    refute @cb.design_docs['missing']
+    refute cb.design_docs['missing']
   end
 
   def design_doc

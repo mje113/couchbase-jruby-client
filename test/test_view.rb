@@ -20,19 +20,12 @@ require File.join(File.dirname(__FILE__), 'setup')
 class TestView < MiniTest::Test
 
   def setup
-    @mock = start_mock
     @path = '_design/users/_view/by_age'
-    @cb = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    @cb.save_design_doc(design_doc)
+    cb.save_design_doc(design_doc)
     { bob: 32, frank: 25, sam: 42, fred: 21 }.each_pair do |name, age|
-      @cb.set(name, { type: 'user', name: name, age: age })
+      cb.set(name, { type: 'user', name: name, age: age })
     end
-    @view = Couchbase::View.new(@cb, @path)
-  end
-
-  def teardown
-    stop_mock(@mock)
-    @cb.disconnect
+    @view = Couchbase::View.new(cb, @path)
   end
 
   def test_initialize
@@ -70,7 +63,7 @@ class TestView < MiniTest::Test
   end
 
   def test_design_doc_access
-    assert results = @cb.design_docs['users'].by_age.to_a
+    assert results = cb.design_docs['users'].by_age.to_a
     assert results.first.is_a?(Couchbase::ViewRow)
   end
 

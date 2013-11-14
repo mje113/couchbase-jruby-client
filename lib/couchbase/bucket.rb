@@ -36,10 +36,38 @@ module Couchbase
     include Couchbase::Async
 
     attr_accessor :quiet, :hostname, :port, :pool, :bucket, :username,
-                  :password, :default_ttl, :timeout,
+                  :password, :default_ttl, :timeout, :default_format,
                   :default_arithmetic_init, :transcoder
 
     attr_reader :client, :key_prefix, :default_format
+
+    DEFAULT_OPTIONS = {
+      type:                      nil,
+      quiet:                     false,
+      hostname:                  'localhost',
+      port:                      8091,
+      pool:                      'default',
+      bucket:                    'default',
+      password:                  '',
+      engine:                    nil,
+      default_ttl:               0,
+      async:                     false,
+      default_arithmetic_init:   0,
+      default_flags:             0,
+      default_format:            :document,
+      default_observe_timeout:   2_500_000,
+      on_error:                  nil,
+      on_connect:                nil,
+      timeout:                   0,
+      environment:               nil,
+      key_prefix:                nil,
+      node_list:                 nil,
+      destroying:                0,
+      connected:                 0,
+      on_connect_proc:           nil,
+      async_disconnect_hook_set: 0,
+      connected:                 false
+    }.freeze
 
     # Initialize new Bucket.
     #
@@ -134,38 +162,10 @@ module Couchbase
     # @return [Bucket]
     #
     def initialize(url = nil, options = {})
-      default_options = {
-        type:                      nil,
-        quiet:                     false,
-        hostname:                  'localhost',
-        port:                      8091,
-        pool:                      'default',
-        bucket:                    'default',
-        password:                  '',
-        engine:                    nil,
-        default_ttl:               0,
-        async:                     false,
-        default_arithmetic_init:   0,
-        default_flags:             0,
-        default_format:            :document,
-        default_observe_timeout:   2_500_000,
-        on_error:                  nil,
-        on_connect:                nil,
-        timeout:                   0,
-        environment:               nil,
-        key_prefix:                nil,
-        node_list:                 nil,
-        destroying:                0,
-        connected:                 0,
-        on_connect_proc:           nil,
-        async_disconnect_hook_set: 0,
-        connected:                 false
-      }
-
       url_options = if url.is_a? String
                       fail ArgumentError.new unless url =~ /^http:\/\//
                       uri = URI.new(url)
-                      { host: uri.host, port: uri.port }.
+                      { hostname: uri.host, port: uri.port }.
                         merge(path_to_pool_and_bucket(uri.path))
                     elsif url.nil?
                       {}
@@ -173,9 +173,9 @@ module Couchbase
                       url
                     end
 
-      # options = Couchbase.normalize_connection_options(options)
+      options = Couchbase.normalize_connection_options(options)
 
-      connection_options = default_options.merge(options).merge(url_options)
+      connection_options = DEFAULT_OPTIONS.merge(url_options).merge(options)
 
       connection_options.each_pair do |key, value|
         instance_variable_set("@#{key}", value)
@@ -186,8 +186,6 @@ module Couchbase
         marshal:  Transcoder::Marshal.new,
         plain:    Transcoder::Plain.new
       }
-
-      @transcoder = @transcoders[@default_format]
 
       connect unless async?
     end
@@ -209,12 +207,12 @@ module Couchbase
 
       begin
         builder = CouchbaseConnectionFactoryBuilder.new
-        builder.setTranscoder(@transcoder)
+        builder.setTranscoder(transcoder)
         connection_factory = builder.buildCouchbaseConnection(uris, bucket.to_java_string, password.to_java_string)
         @client = CouchbaseClient.new(connection_factory)
         @connected = true
       rescue Java::ComCouchbaseClientVbucket::ConfigurationException
-        fail Couchbase::Error::Auth
+        fail Couchbase::Error::Auth, 'Couchbase configurations are incorrect.'
       rescue java.net.ConnectException => e
         fail Couchbase::Error::Connect
       end
@@ -248,6 +246,10 @@ module Couchbase
       else
         fail Couchbase::Error::Connect
       end
+    end
+
+    def transcoder
+      @transcoders[@default_format]
     end
 
     def on_connect(&block)

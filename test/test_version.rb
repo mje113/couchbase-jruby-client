@@ -19,32 +19,22 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestVersion < MiniTest::Test
 
-  def setup
-    @mock = start_mock
-  end
-
-  def teardown
-    stop_mock(@mock)
-  end
-
   def test_sync_version
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
-    ver = connection.version
+    ver = cb.version
     assert ver.is_a?(Hash)
-    assert_equal @mock.num_nodes, ver.size
+    assert_equal 1, ver.size
   end
 
   def test_async_version
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     ver = {}
-    connection.run do |conn|
+    cb.run do |conn|
       conn.version do |ret|
         assert ret.success?
         ver[ret.node] = ret.value
       end
     end
-    assert_equal @mock.num_nodes, ver.size
+    assert_equal 1, ver.size
     ver.each do |node, v|
       assert v.is_a?(String)
     end

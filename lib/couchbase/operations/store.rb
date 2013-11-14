@@ -407,7 +407,7 @@ module Couchbase::Operations
     def store_args_parser(key, value, options)
       key = key.to_str if key.respond_to?(:to_str)
       ttl = options.delete(:ttl) || default_ttl
-      transcoder = @transcoders[options.delete(:format)] || @transcoder
+      transcoder = @transcoders[options.delete(:format)] || self.transcoder
 
       [key, value, ttl, transcoder]
     end

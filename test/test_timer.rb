@@ -19,24 +19,15 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestTimer < MiniTest::Test
 
-  def setup
-    @mock = start_mock
-  end
-
-  def teardown
-    stop_mock(@mock)
-  end
-
   def test_initialization
     skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port)
     num = 0
-    connection.run do
+    cb.run do
       assert Couchbase::Timer.new(connection, 100)  { num += 1}
-      assert connection.create_timer(100)           { num += 1}
+      assert cb.create_timer(100)           { num += 1}
 
       assert Couchbase::Timer.new(connection, 100, :periodic => true)  {|t| num += 1; t.cancel}
-      assert connection.create_periodic_timer(100)                     {|t| num += 1; t.cancel}
+      assert cb.create_periodic_timer(100)                     {|t| num += 1; t.cancel}
     end
     assert_equal 4, num
   end

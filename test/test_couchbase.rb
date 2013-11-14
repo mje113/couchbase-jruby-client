@@ -16,18 +16,19 @@
 #
 
 require File.join(File.dirname(__FILE__), 'setup')
-require 'minitest/mock'
 
 class TestCouchbase < MiniTest::Test
 
   def test_that_it_create_instance_of_bucket
-    with_mock do |mock|
-      assert_instance_of Couchbase::Bucket, Couchbase.new("http://#{mock.host}:#{mock.port}")
+    with_configs do |configs|
+      connection = Couchbase.new("http://#{configs.host}:#{configs.port}")
+      assert_instance_of Couchbase::Bucket, connection
+      connection.disconnect
     end
   end
 
   def test_global_bucket_access
-    with_mock do |mock|
+    with_configs do |configs|
       assert_instance_of Couchbase::Bucket, Couchbase.bucket
       assert_equal Couchbase.bucket, Couchbase.bucket
     end
