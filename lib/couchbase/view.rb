@@ -88,8 +88,8 @@ module Couchbase
       @bucket   = bucket
       @endpoint = endpoint
       @design_doc, @name = parse_endpoint(endpoint)
-      @params   = { :connection_timeout => 75_000 }.merge(params)
       @wrapper_class = params.delete(:wrapper_class) || ViewRow
+      @params   = { :connection_timeout => 75_000 }.merge(params)
       unless @wrapper_class.respond_to?(:wrap)
         raise ArgumentError, "wrapper class should reposond to :wrap, check the options"
       end

@@ -63,16 +63,16 @@ module Couchbase::Operations
               else
                 raise ArgumentError, "Document should be Hash, String or IO instance"
               end
-      
+
       id = attrs.delete('_id').to_s.split('/')[1]
 
       design_doc = DesignDocument.new(id)
 
-      attrs['views'].each_pair do |view, functions| 
+      attrs['views'].each_pair do |view, functions|
         view_design = if functions['reduce']
-                        ViewDesign.new(view, functions['map'], functions['reduce'])
+                        ViewDesign.new(view.to_s.to_java_string, functions['map'].to_java_string, functions['reduce'].to_java_string)
                       else
-                        ViewDesign.new(view, functions['map'])
+                        ViewDesign.new(view.to_s.to_java_string, functions['map'].to_java_string)
                       end
         design_doc.getViews.add(view_design)
       end

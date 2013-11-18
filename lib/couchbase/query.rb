@@ -69,21 +69,21 @@ module Couchbase
       end
 
 
-    # @option params [true, false] :quiet (true) Do not raise error if
-    #   associated document not found in the memory. If the parameter +true+
-    #   will use +nil+ value instead.
-    # @option params [String, Symbol] :on_error (:continue) Sets the
-    #   response in the event of an error. Supported values:
-    #   :continue:: Continue to generate view information in the event of an
-    #               error, including the error information in the view
-    #               response stream.
-    #   :stop::     Stop immediately when an error condition occurs. No
-    #               further view information will be returned.
-    # @option params [Fixnum] :connection_timeout (75000) Timeout before the
-    #   view request is dropped (milliseconds)
+      # @option params [true, false] :quiet (true) Do not raise error if
+      #   associated document not found in the memory. If the parameter +true+
+      #   will use +nil+ value instead.
+      # @option params [String, Symbol] :on_error (:continue) Sets the
+      #   response in the event of an error. Supported values:
+      #   :continue:: Continue to generate view information in the event of an
+      #               error, including the error information in the view
+      #               response stream.
+      #   :stop::     Stop immediately when an error condition occurs. No
+      #               further view information will be returned.
+      # @option params [Fixnum] :connection_timeout (75000) Timeout before the
+      #   view request is dropped (milliseconds)
 
 
-    # @option params [Hash] :body
+      # @option params [Hash] :body
       query
     end
 

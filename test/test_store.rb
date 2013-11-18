@@ -120,7 +120,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_append
-    skip 'Plain encoding isnt working correctly'
     cb.default_format = :plain
 
     cas1 = cb.set(uniq_id, "foo")

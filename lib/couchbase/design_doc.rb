@@ -16,7 +16,11 @@
 #
 
 module Couchbase
-  class DesignDoc
+  class DesignDoc < ViewRow
+
+    # It isn't allowed to change design document ID after
+    # initialization
+    undef id=
 
     def initialize(bucket, doc)
       @all_views = {}
@@ -24,6 +28,7 @@ module Couchbase
       @name      = doc.name
       @views     = doc.views
       @spatial   = doc.spatial_views
+      @doc       = {}
       @views.each   { |view| @all_views[view.name] = "#{@name}/_view/#{view.name}" }
       @spatial.each { |view| @all_views[view.name] = "#{@name}/_spatial/#{view.name}" }
     end
