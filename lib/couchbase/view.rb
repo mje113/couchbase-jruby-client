@@ -297,13 +297,13 @@ module Couchbase
       if block_given?
         block = Proc.new
         request.each do |data|
-          doc = @wrapper_class.wrap(@bucket, data)
+          doc = @wrapper_class.wrap(@bucket, data.getDocument)
           block.call(doc)
         end
         nil
       else
         docs = request.to_a.map { |data|
-          @wrapper_class.wrap(@bucket, data)
+          @wrapper_class.wrap(@bucket, data.getDocument)
         }
         docs = ArrayWithTotalRows.new(docs)
         docs.total_rows = request.size
