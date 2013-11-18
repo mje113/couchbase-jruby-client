@@ -48,7 +48,7 @@ require 'couchbase/query'
 
 include Java
 
-import Java::com.couchbase.client.CouchbaseClient;
+java_import Java::com.couchbase.client.CouchbaseClient
 
 at_exit do
   Couchbase.disconnect
