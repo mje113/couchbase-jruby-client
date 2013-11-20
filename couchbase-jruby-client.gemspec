@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.summary       = %q{The unofficial jruby client library for use with Couchbase Server.}
   s.homepage      = 'https://github.com/mje113/couchbase-jruby-client'
   s.license       = 'Apache'
-  #s.platform      = Gem::Platform::JAVA
+  s.platform      = Gem::Platform::JAVA
 
   s.files         = `git ls-files`.split($/)
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -27,5 +27,4 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'minitest',  '~> 5.0.4'
   s.add_development_dependency 'jrjackson', '~> 0.2.3'
   s.add_development_dependency 'active_support'
-  s.add_development_dependency 'pry'
 end

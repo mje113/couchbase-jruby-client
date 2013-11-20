@@ -46,8 +46,9 @@ module Couchbase
 
     def generate
       query = Java::ComCouchbaseClientProtocolViews::Query.new
+      stale = @params.delete(:stale)
 
-      if stale = @params.delete(:stale)
+      if !stale.nil?
         case stale
         when :after_update
           query.setStale(Stale::UPDATE_AFTER)
