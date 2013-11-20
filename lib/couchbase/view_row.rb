@@ -16,15 +16,31 @@
 #
 
 module Couchbase
-  java_import com.couchbase.client.protocol.views.ViewRowNoDocs
-    java_import com.couchbase.client.protocol.views.ViewRowWithDocs
-    java_import com.couchbase.client.protocol.views.ViewRowReduced
-    java_import com.couchbase.client.protocol.views.SpatialViewRowNoDocs
-    java_import com.couchbase.client.protocol.views.SpatialViewRowWithDocs
 
-# ViewRowWithDocs, SpatialViewRowWithDocs
-#         @doc   = data.document
-#       when SpatialViewRowNoDocs, SpatialViewRowWithDocs
+  java_import com.couchbase.client.protocol.views.ViewRowNoDocs
+  java_import com.couchbase.client.protocol.views.ViewRowWithDocs
+  java_import com.couchbase.client.protocol.views.ViewRowReduced
+  java_import com.couchbase.client.protocol.views.SpatialViewRowNoDocs
+  java_import com.couchbase.client.protocol.views.SpatialViewRowWithDocs
+
+  module Java::ComCouchbaseClientProtocolViews::ViewRow
+
+    def doc
+      {
+        'meta'  => nil,
+        'value' => document
+      }
+    end
+
+    def [](key)
+      if respond_to?(key)
+        send(key)
+      else
+        fail NoMethodError, "ViewRow##{key} isn't defined."
+      end
+    end
+  end
+
   # This class encapsulates structured JSON document
   #
   # @since 1.2.0
