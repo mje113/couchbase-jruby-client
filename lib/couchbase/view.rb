@@ -89,7 +89,7 @@ module Couchbase
       @endpoint = endpoint
       @design_doc, @name = parse_endpoint(endpoint)
       @wrapper_class = params.delete(:wrapper_class) || ViewRow
-      @params   = { :connection_timeout => 75_000 }.merge(params)
+      @params   = { connection_timeout: 75_000 }.merge(params)
       unless @wrapper_class.respond_to?(:wrap)
         raise ArgumentError, "wrapper class should reposond to :wrap, check the options"
       end
@@ -285,8 +285,7 @@ module Couchbase
     #                                  :include_docs => true)
     def fetch(params = {})
       params = @params.merge(params)
-      include_docs = params[:include_docs]
-      quiet = params.fetch(:quiet, true)
+      # quiet = params.fetch(:quiet, true)
 
       view = @bucket.client.getView(@design_doc, @name)
 
@@ -297,13 +296,13 @@ module Couchbase
       if block_given?
         block = Proc.new
         request.each do |data|
-          doc = @wrapper_class.wrap(@bucket, data.getDocument)
+          doc = @wrapper_class.wrap(@bucket, data)
           block.call(doc)
         end
         nil
       else
         docs = request.to_a.map { |data|
-          @wrapper_class.wrap(@bucket, data.getDocument)
+          @wrapper_class.wrap(@bucket, data)
         }
         docs = ArrayWithTotalRows.new(docs)
         docs.total_rows = request.size
@@ -352,8 +351,6 @@ module Couchbase
         raise Error::View.new(*args)
       end
     end
-
-    private
 
     def parse_endpoint(endpoint)
       parts = endpoint.split('/')
