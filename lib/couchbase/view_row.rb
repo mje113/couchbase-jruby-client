@@ -16,6 +16,15 @@
 #
 
 module Couchbase
+  java_import com.couchbase.client.protocol.views.ViewRowNoDocs
+    java_import com.couchbase.client.protocol.views.ViewRowWithDocs
+    java_import com.couchbase.client.protocol.views.ViewRowReduced
+    java_import com.couchbase.client.protocol.views.SpatialViewRowNoDocs
+    java_import com.couchbase.client.protocol.views.SpatialViewRowWithDocs
+
+# ViewRowWithDocs, SpatialViewRowWithDocs
+#         @doc   = data.document
+#       when SpatialViewRowNoDocs, SpatialViewRowWithDocs
   # This class encapsulates structured JSON document
   #
   # @since 1.2.0
@@ -24,12 +33,6 @@ module Couchbase
   #
   # @see http://www.couchbase.com/docs/couchbase-manual-2.0/couchbase-views-datastore.html
   class ViewRow
-
-    java_import com.couchbase.client.protocol.views.ViewRowNoDocs
-    java_import com.couchbase.client.protocol.views.ViewRowWithDocs
-    java_import com.couchbase.client.protocol.views.ViewRowReduced
-    java_import com.couchbase.client.protocol.views.SpatialViewRowNoDocs
-    java_import com.couchbase.client.protocol.views.SpatialViewRowWithDocs
 
     include Constants
 
