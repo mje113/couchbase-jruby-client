@@ -262,7 +262,8 @@ module Couchbase::Operations
     def get_bulk_extended(keys, options = {})
       {}.tap do |results|
         keys.each do |key|
-          results[key] = get_extended(key, options)
+          result = get_extended(key, options)
+          results[key] = result unless result.nil?
         end
       end
     end
