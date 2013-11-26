@@ -17,7 +17,14 @@
 
 module Couchbase
 
+  class ClusterError < Error::Base; end
+
   class Cluster
+
+    java_import java.net.URI
+    java_import com.couchbase.client.clustermanager.BucketType
+    java_import com.couchbase.client.clustermanager.FlushResponse
+    java_import com.couchbase.client.clustermanager.AuthType
 
     # Establish connection to the cluster for administration
     #
@@ -27,11 +34,33 @@ module Couchbase
     # @option options [String] :pool ("default") The pool name
     # @option options [String] :hostname ("localhost") The hostname
     # @option options [String] :port (8091) The port
-    def initialize(options = {})
+    def initialize(options)
       if options[:username].nil? || options[:password].nil?
         raise ArgumentError, "username and password mandatory to connect to the cluster"
       end
-      @connection = Bucket.new(options.merge(:type => :cluster))
+
+      options = {
+        hostname: 'localhost',
+        port:     8091
+      }.merge(options)
+
+      cluster_uri = "http://#{options[:hostname]}:#{options[:port]}"
+
+      uri_list = Array(URI.new(cluster_uri))
+      @manager = Java::ComCouchbaseClient::ClusterManager.new(uri_list, options[:username], options[:password])
+    end
+
+    # List available buckets
+    def list_buckets
+      @manager.listBuckets
+    end
+
+    # Delete the data bucket
+    #
+    # @param [String] name The name of the bucket
+    # @param [Hash] options
+    def delete_bucket(bucket)
+      @manager.deleteBucket(bucket)
     end
 
     # Create data bucket
@@ -48,58 +77,40 @@ module Couchbase
     #   port for "none"
     # @option options [Fixnum] :proxy_port The port for moxi
     def create_bucket(name, options = {})
-      defaults = {
-        :type => "couchbase",
-        :ram_quota => 100,
-        :replica_number => 1,
-        :auth_type => "sasl",
-        :sasl_password => "",
-        :proxy_port => nil
-      }
-      options = defaults.merge(options)
-      params = {"name" => name}
-      params["bucketType"] = options[:type]
-      params["ramQuotaMB"] = options[:ram_quota]
-      params["replicaNumber"] = options[:replica_number]
-      params["authType"] = options[:auth_type]
-      params["saslPassword"] = options[:sasl_password]
-      params["proxyPort"] = options[:proxy_port]
-      payload = Utils.encode_params(params.reject!{|k, v| v.nil?})
-      request = @connection.make_http_request("/pools/default/buckets",
-                                              :content_type => "application/x-www-form-urlencoded",
-                                              :type => :management,
-                                              :method => :post,
-                                              :extended => true,
-                                              :body => payload)
-      response = nil
-      request.on_body do |r|
-        response = r
-        response.instance_variable_set("@operation", :create_bucket)
-        yield(response) if block_given?
+      ram_quota   = options[:ram_quota] || 100
+      replicas    = options[:replica_number] || 0
+      flush       = options.fetch(:flush) { true }
+      password    = options[:password]
+      proxy_port  = options[:proxy_port]
+      auth_type   = options[:auth_type] || 'sasl'
+      bucket_type = options[:bucket_type] == 'memcached' ? BucketType::MEMCACHED : BucketType::COUCHBASE
+
+      if name == 'default'
+        @manager.createDefaultBucket(bucket_type, ram_quota, replicas, flush)
+      elsif auth == 'sasl'
+        @manager.createPortBucket(bucket_type, name, ram_quota, replicas, proxy_port, flush)
+      else
+        @manager.createNamedBucket(bucket_type, name, ram_quota, replicas, password, flush)
       end
-      request.continue
-      response
+      true
+    rescue Java::JavaLang::RuntimeException => e
+      raise ClusterError, e
     end
 
-    # Delete the data bucket
-    #
-    # @param [String] name The name of the bucket
-    # @param [Hash] options
-    def delete_bucket(name, options = {})
-      request = @connection.make_http_request("/pools/default/buckets/#{name}",
-                                              :type => :management,
-                                              :method => :delete,
-                                              :extended => true)
-      response = nil
-      request.on_body do |r|
-        response = r
-        response.instance_variable_set("@operation", :delete_bucket)
-        yield(response) if block_given?
-      end
-      request.continue
-      response
+    def flush_bucket(bucket)
+      @manager.flushBucket(bucket) == FlushResponse::OK
     end
 
+    def update_bucket(name, options)
+      # implement
+    end
+
+    def self.manage(cluster_uri, username, password, &block)
+      manager = new(cluster_uri, username, password)
+      yield manager
+    ensure
+      manager.shutdown
+    end
   end
 
 end
