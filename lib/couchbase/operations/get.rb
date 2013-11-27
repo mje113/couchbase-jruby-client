@@ -223,6 +223,8 @@ module Couchbase::Operations
       else
         value = if options.key?(:ttl)
                   client_get_and_touch(key, options[:ttl])
+                elsif options[:format]
+                  client.get(key, transcoders[options[:format]])
                 else
                   client.get(key)
                 end
@@ -230,6 +232,8 @@ module Couchbase::Operations
         not_found_error(value.nil?, options)
         value.nil? ? nil : value
       end
+    rescue Java::JavaLang::RuntimeException
+      get_single(key, options.merge(format: :plain))
     end
 
     def get_extended(key, options = {})

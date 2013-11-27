@@ -25,7 +25,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_set_with_cas
-
     cas1 = cb.set(uniq_id, "bar1")
     assert cas1 > 0
 
@@ -44,7 +43,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_add
-
     cas1 = cb.add(uniq_id, "bar")
     assert cas1 > 0
 
@@ -58,7 +56,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_replace
-
     assert_raises(Couchbase::Error::NotFound) do
       cb.replace(uniq_id, "bar")
     end
@@ -70,7 +67,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_acceptable_keys
-
     cas = cb.set(uniq_id.to_sym, "bar")
     assert cas > 0
 
@@ -120,9 +116,7 @@ class TestStore < MiniTest::Test
   end
 
   def test_append
-    cb.default_format = :plain
-
-    cas1 = cb.set(uniq_id, "foo")
+    cas1 = cb.set(uniq_id, "foo", format: :plain)
     assert cas1 > 0
     cas2 = cb.append(uniq_id, "bar")
     assert cas2 > 0
@@ -130,12 +124,9 @@ class TestStore < MiniTest::Test
 
     val = cb.get(uniq_id)
     assert_equal "foobar", val
-  ensure
-    cb.default_format = :document
   end
 
   def test_prepend
-    skip 'Plain encoding isnt working correctly'
     cb.default_format = :plain
 
     cas1 = cb.set(uniq_id, "foo")
@@ -165,19 +156,22 @@ class TestStore < MiniTest::Test
 
   ArbitraryData = Struct.new(:baz)
 
+  def test_set_with_marshal
+    cb.set(uniq_id, ArbitraryData.new('thing'), format: :marshal)
+    val = cb.get(uniq_id)
+    assert val.is_a?(ArbitraryData)
+    assert_equal "thing", val.baz
+  end
+
   def test_set_using_brackets
     cb[uniq_id(1)] = "foo"
     val = cb.get(uniq_id(1))
     assert_equal "foo", val
 
-    # if RUBY_VERSION =~ /^1\.9/
-    #   eval <<-EOC
-    #   connection[uniq_id(3), :format => :marshal] = ArbitraryData.new("thing")
-    #   val = cb.get(uniq_id(3))
-    #   assert val.is_a?(ArbitraryData)
-    #   assert_equal "thing", val.baz
-    #   EOC
-    # end
+    cb[uniq_id(3), :format => :marshal] = ArbitraryData.new("thing")
+    val = cb.get(uniq_id(3))
+    assert val.is_a?(ArbitraryData)
+    assert_equal "thing", val.baz
   end
 
   def test_multi_store

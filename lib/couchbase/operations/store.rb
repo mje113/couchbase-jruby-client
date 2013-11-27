@@ -22,8 +22,8 @@ module Couchbase::Operations
       set:     -> client, key, value, ttl, transcoder { client.set(key, ttl, value, transcoder) },
       add:     -> client, key, value, ttl, transcoder { client.add(key, ttl, value, transcoder) },
       replace: -> client, key, value, ttl, transcoder { client.replace(key, ttl, value, transcoder) },
-      append:  -> client, key, value, ttl, transcoder { client.append(key, value) },
-      prepend: -> client, key, value, ttl, transcoder { client.prepend(key, value) }
+      append:  -> client, key, value, ttl, transcoder { client.append(key, value, transcoder) },
+      prepend: -> client, key, value, ttl, transcoder { client.prepend(key, value, transcoder) }
     }.freeze
 
     # Unconditionally store the object in the Couchbase
@@ -428,6 +428,7 @@ module Couchbase::Operations
       if options[:cas] && op == :set
         client_cas(key, value, ttl, options[:cas], transcoder)
       else
+        transcoder = op == :append || op == :prepend ? transcoders[:plain] : transcoder
         future = client_store_op(op, key, value, ttl, transcoder)
         if cas = future_cas(future)
           cas

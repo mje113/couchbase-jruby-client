@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestStore < MiniTest::Test
+class TestDelete < MiniTest::Test
 
   def test_trivial_delete
     cb.set(uniq_id, "bar")

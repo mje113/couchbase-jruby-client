@@ -265,6 +265,7 @@ class TestGet < MiniTest::Test
   end
 
   def test_zero_length_string_is_not_nil
+    skip
     cb.set(uniq_id, "", :format => :document)
     assert_equal "", cb.get(uniq_id)
 

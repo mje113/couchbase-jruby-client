@@ -37,6 +37,8 @@ module Couchbase
         MultiJson.load(data)
       rescue MultiJson::LoadError
         ::Marshal.load(data)
+      rescue TypeError
+        data
       end
 
       def encode(o)

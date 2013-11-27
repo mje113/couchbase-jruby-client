@@ -37,7 +37,7 @@ module Couchbase
 
     attr_accessor :quiet, :hostname, :port, :pool, :bucket, :username,
                   :password, :default_ttl, :timeout, :default_format,
-                  :default_arithmetic_init, :transcoder
+                  :default_arithmetic_init, :transcoder, :transcoders
 
     attr_reader :client, :key_prefix, :default_format
 
@@ -249,7 +249,7 @@ module Couchbase
     end
 
     def transcoder
-      @transcoders[@default_format]
+      transcoders[default_format]
     end
 
     def on_connect(&block)
