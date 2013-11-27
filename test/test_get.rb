@@ -49,8 +49,6 @@ class TestGet < MiniTest::Test
   end
 
   def test_multi_get_extended
-    skip 'Looking like Java client doesnt support multi_get_extended'
-
     cas1 = cb.set(uniq_id(1), "foo1")
     cas2 = cb.set(uniq_id(2), "foo2")
 
@@ -267,8 +265,6 @@ class TestGet < MiniTest::Test
   end
 
   def test_zero_length_string_is_not_nil
-    skip("zero length string")
-
     cb.set(uniq_id, "", :format => :document)
     assert_equal "", cb.get(uniq_id)
 
