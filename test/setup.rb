@@ -16,6 +16,8 @@
 #
 
 gem 'minitest'
+require 'coveralls'
+Coveralls.wear!
 require 'minitest/autorun'
 require 'couchbase'
 
