@@ -1,5 +1,10 @@
 # Couchbase JRuby Client
 
+[![Build Status](https://api.travis-ci.org/mje113/couchbase-jruby-client.png)](http://travis-ci.org/mje113/couchbase-jruby-client)
+[![Code Climate](https://codeclimate.com/github/mje113/couchbase-jruby-client.png)](https://codeclimate.com/github/mje113/couchbase-jruby-client)
+[![Coverage Status](https://coveralls.io/repos/mje113/couchbase-jruby-client/badge.png)](https://coveralls.io/r/mje113/couchbase-jruby-client)
+[![Dependency Status](https://gemnasium.com/mje113/couchbase-jruby-client.png)](https://gemnasium.com/mje113/couchbase-jruby-client)
+
 Attempt to recreate the ruby Couchbase client api in JRuby and the
 Couchbase Java SDK.
 
