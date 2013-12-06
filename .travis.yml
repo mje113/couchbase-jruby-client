@@ -1,7 +1,7 @@
 before_install:
   # Couchbase Server
   - sudo service memcached stop
-  - sudo echo "couchbase              soft    nofile                  20000\ncouchbase              hard    nofile                  30000" > /etc/security/limits.d/couchbase.conf
+  - sudo echo "couchbase              soft    nofile                  20000\ncouchbase              hard    nofile                  30000" | sudo tee /etc/security/limits.d/couchbase.conf
   - sudo chmod 644 /etc/security/limits.d/couchbase.conf
   - sudo wget http://packages.couchbase.com/releases/2.2.0/couchbase-server-enterprise_2.2.0_x86_64.deb
   - sudo dpkg -i couchbase-server-enterprise_2.2.0_x86_64.deb
