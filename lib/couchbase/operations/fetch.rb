@@ -1,5 +1,7 @@
 # Author:: Joe Winter <jwinter@jwinter.org>
 # Copyright:: 2013 jwinter.org
+# Author:: Mike Evans <mike@urlgonomics.com>
+# Copyright:: 2013 Urlgonomics LLC.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +22,7 @@ module Couchbase::Operations
 
     def fetch(key, set_options = {}, &block)
       raise ArgumentError('Must pass a block to #fetch') unless block_given?
-      if value = get(key)
-        value
-      else
-        yield(block).tap {|value| set(key, value, set_options) }
-      end
+      get(key, :quiet => false)
     rescue Couchbase::Error::NotFound
       yield(block).tap {|value| set(key, value, set_options) }
     end
