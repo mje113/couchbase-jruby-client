@@ -2,6 +2,7 @@ before_install:
   # Couchbase Server
   - sudo wget http://packages.couchbase.com/releases/2.2.0/couchbase-server-enterprise_2.2.0_x86_64.deb
   - sudo dpkg -i couchbase-server-enterprise_2.2.0_x86_64.deb
+  - sudo service memcached stop
   - sudo service couchbase-server start
 notifications:
   email:
