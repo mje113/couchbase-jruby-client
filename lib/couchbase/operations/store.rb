@@ -15,6 +15,12 @@
 # limitations under the License.
 #
 
+# java_import com.couchbase.client.CouchbaseClient
+
+# class CouchbaseClient
+#   java_alias :java_set, :set, [java.lang.String, Java::int, java.lang.Object, Java::net.spy.memcached.transcoders.Transcoder.java_class]
+# end
+
 module Couchbase::Operations
   module Store
 

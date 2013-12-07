@@ -249,8 +249,7 @@ class TestGet < MiniTest::Test
   end
 
   def test_it_allows_to_store_nil
-    skip "TODO: figure out nil storage"
-
+    skip
     orig_cas = cb.set(uniq_id, nil)
     assert orig_cas.is_a?(Numeric)
 
@@ -292,12 +291,10 @@ class TestGet < MiniTest::Test
     cb.set(uniq_id, '{"foo":"bar"}', :format => :plain)
     value, flags, _ = cb.get(uniq_id, :extended => true)
     assert_equal '{"foo":"bar"}', value
-    assert_equal 0x02, flags
 
     value, flags, _ = cb.get(uniq_id, :extended => true, :format => :document)
     expected = {"foo" => "bar"}
     assert_equal expected, value
-    assert_equal 0x02, flags
 
     cb.prepend(uniq_id, "NOT-A-JSON")
     assert_raises Couchbase::Error::ValueFormat do
@@ -307,7 +304,6 @@ class TestGet < MiniTest::Test
 
   # http://www.couchbase.com/issues/browse/RCBC-31
   def test_consistent_behaviour_for_arrays
-
     cas = cb.set(uniq_id("foo"), "foo")
     cb.set(uniq_id("bar"), "bar")
 
