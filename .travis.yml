@@ -2,7 +2,7 @@ before_install:
   # Couchbase Server
   - sudo service memcached stop
   - sudo wget http://packages.couchbase.com/releases/2.2.0/couchbase-server-enterprise_2.2.0_x86_64.deb
-  - sudo dpkg -D777 -i couchbase-server-enterprise_2.2.0_x86_64.deb
+  - sudo dpkg -D1 -i couchbase-server-enterprise_2.2.0_x86_64.deb
   - sudo service couchbase-server start
   - /opt/couchbase/bin/couchbase-cli cluster-init -c localhost --cluster-init-username=admin --cluster-init-password=password --cluster-init-ramsize=256
   - /opt/couchbase/bin/couchbase-cli bucket-create -c localhost --bucket=default --bucket-type=couchbase --bucket-ramsize=256 -u admin -p password
