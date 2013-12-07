@@ -44,7 +44,7 @@ module Couchbase
     DEFAULT_OPTIONS = {
       type:                      nil,
       quiet:                     false,
-      hostname:                  '127.0.0.1',
+      hostname:                  'localhost',
       port:                      8091,
       pool:                      'default',
       bucket:                    'default',
