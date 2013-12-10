@@ -150,11 +150,6 @@ module Couchbase::Operations
 
       if async?
         async_get(key, &block)
-        # if block_given?
-        #   async_get(key, &Proc.new)
-        # else
-        #   async_get(key)
-        # end
       else
         sync_block_error if block_given?
         get_key(key, options)
@@ -167,7 +162,7 @@ module Couchbase::Operations
 
     def get_bulk(keys, options)
       results = if options[:extended]
-                  get_bulk_extended(keys)
+                  get_bulk_extended(keys, options)
                 else
                   client_get_bulk(keys)
                 end

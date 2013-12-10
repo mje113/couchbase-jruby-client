@@ -124,6 +124,11 @@ class TestGet < MiniTest::Test
     refute cb.get(uniq_id(:missing), :quiet => true)
   end
 
+  def test_it_allows_temporary_quiet_flag_with_bulk_extended
+    results = cb.get([uniq_id(:missing1), uniq_id(:missing2)], :extended => true, :quiet => true)
+    assert_empty results
+  end
+
   def test_missing_in_verbose_mode
     cb.set(uniq_id(1), "foo1")
     cb.set(uniq_id(2), "foo2")
