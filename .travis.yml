@@ -1,4 +1,4 @@
-ahbefore_install:
+before_install:
   # Couchbase Server
   - sudo service memcached stop
   - sudo wget http://packages.couchbase.com/releases/2.2.0/couchbase-server-enterprise_2.2.0_x86_64.deb
