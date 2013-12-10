@@ -22,11 +22,11 @@ end
 
 require 'java'
 require 'jars/commons-codec-1.5.jar'
-require 'jars/couchbase-client-1.2.0.jar'
+require 'jars/couchbase-client-1.2.3.jar'
 require 'jars/jettison-1.1.jar'
 require 'jars/httpcore-4.1.1.jar'
 require 'jars/netty-3.5.5.Final.jar'
-require 'jars/spymemcached-2.10.0.jar'
+require 'jars/spymemcached-2.10.3.jar'
 require 'jars/httpcore-nio-4.1.1.jar'
 require 'couchbase/version'
 require 'uri'
