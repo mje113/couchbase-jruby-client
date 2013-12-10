@@ -30,7 +30,6 @@ class TestFormat < MiniTest::Test
     assert_equal :document, cb.default_format
     cb.set(uniq_id, orig_doc)
     doc, flags, cas = cb.get(uniq_id, :extended => true)
-    # assert_equal 0x00, flags & 0x11
     assert doc.is_a?(Hash)
     assert_equal 'Twoflower', doc['name']
     assert_equal 'The tourist', doc['role']
@@ -67,15 +66,13 @@ class TestFormat < MiniTest::Test
     orig_doc = ArbitraryClass.new("Twoflower", "The tourist")
     cb.set(uniq_id, orig_doc, :format => :marshal)
     doc, flags, cas = cb.get(uniq_id, :extended => true)
-    # assert_equal Couchbase::Bucket::FMT_MARSHAL, flags & Couchbase::Bucket::FMT_MASK
     assert doc.is_a?(ArbitraryClass)
     assert_equal 'Twoflower', doc.name
     assert_equal 'The tourist', doc.role
   end
 
   def test_it_accepts_only_string_in_plain_mode
-    skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :default_format => :plain)
+    cb.default_format = :plain
     cb.set(uniq_id, "1")
 
     assert_raises(Couchbase::Error::ValueFormat) do
@@ -85,25 +82,19 @@ class TestFormat < MiniTest::Test
     assert_raises(Couchbase::Error::ValueFormat) do
       cb.set(uniq_id, {:foo => "bar"})
     end
+  ensure
+    cb.default_format = :document
   end
 
   def test_bignum_conversion
-    skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :default_format => :plain)
+    cb.default_format = :plain
     cas = 0xffff_ffff_ffff_ffff
     assert cas.is_a?(Bignum)
     assert_raises(Couchbase::Error::NotFound) do
       cb.delete(uniq_id => cas)
     end
-  end
-
-  def test_it_allows_to_turn_off_transcoder
-    skip
-    connection = Couchbase.new(:hostname => @mock.host, :port => @mock.port, :transcoder => nil)
-    cb.set(uniq_id, "value", :flags => 0xffff_ffff)
-    doc, flags, _ = cb.get(uniq_id, :extended => true)
-    assert_equal "value", doc
-    assert_equal 0xffff_ffff, flags
+  ensure
+    cb.default_format = :document
   end
 
   require 'zlib'
