@@ -20,26 +20,31 @@ require File.join(File.dirname(__FILE__), 'setup')
 class TestDesignDocs < MiniTest::Test
 
   def test_save_design_doc
+    skip unless $mock.real?
     assert cb.save_design_doc(design_doc)
   end
 
   def test_save_design_doc_with_bad_data
+    skip unless $mock.real?
     assert_raises ArgumentError do
       cb.save_design_doc(123)
     end
   end
 
   def test_delete_design_doc
+    skip unless $mock.real?
     cb.save_design_doc(design_doc)
     assert cb.delete_design_doc('blog')
   end
 
   def test_design_doc_access
+    skip unless $mock.real?
     cb.save_design_doc(design_doc)
     assert cb.design_docs['blog']
   end
 
   def test_design_doc_missing_access
+    skip unless $mock.real?
     refute cb.design_docs['missing']
   end
 

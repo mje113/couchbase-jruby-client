@@ -20,6 +20,8 @@ require File.join(File.dirname(__FILE__), 'setup')
 class TestView < MiniTest::Test
 
   def setup
+    return unless $mock.real?
+
     @path = '_design/users/_view/by_age'
     cb.save_design_doc(design_doc)
     { bob: 32, frank: 25, sam: 42, fred: 21 }.each_pair do |name, age|
@@ -29,16 +31,19 @@ class TestView < MiniTest::Test
   end
 
   def test_initialize
+    skip unless $mock.real?
     assert_equal 'users',  @view.design_doc
     assert_equal 'by_age', @view.name
   end
 
   def test_simple_fetch
+    skip unless $mock.real?
     assert results = @view.fetch
     assert results.is_a?(Couchbase::View::ArrayWithTotalRows)
   end
 
   def test_fetch_without_stale
+    skip unless $mock.real?
     assert results = @view.fetch(stale: false)
     assert results.first.is_a?(Couchbase::ViewRow)
     assert results.first.doc.nil?
@@ -49,12 +54,14 @@ class TestView < MiniTest::Test
   end
 
   def test_fetch_with_docs
+    skip unless $mock.real?
     assert results = @view.fetch(stale: false, include_docs: true)
     assert results.is_a?(Array)
     assert results.first.doc.is_a?(Hash)
   end
 
   def test_fetch_with_block
+    skip unless $mock.real?
     refute @view.fetch(stale: false, include_docs: true) { |row|
       assert row.is_a?(Couchbase::ViewRow)
       assert row.doc['name'].is_a?(String)
@@ -63,6 +70,7 @@ class TestView < MiniTest::Test
   end
 
   def test_design_doc_access
+    skip unless $mock.real?
     assert results = cb.design_docs['users'].by_age.to_a
     assert results.first.is_a?(Couchbase::ViewRow)
   end

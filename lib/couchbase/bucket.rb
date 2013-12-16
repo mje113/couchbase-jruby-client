@@ -211,10 +211,10 @@ module Couchbase
         connection_factory = builder.buildCouchbaseConnection(uris, bucket.to_java_string, password.to_java_string)
         @client = CouchbaseClient.new(connection_factory)
         @connected = true
-      rescue Java::ComCouchbaseClientVbucket::ConfigurationException
-        fail Couchbase::Error::Auth, 'Couchbase configurations are incorrect.'
+      rescue Java::ComCouchbaseClientVbucket::ConfigurationException => e
+        fail Couchbase::Error::Auth, "Couchbase configurations are incorrect: #{e.to_s}"
       rescue java.net.ConnectException => e
-        fail Couchbase::Error::Connect
+        fail Couchbase::Error::Connect, e.to_s
       end
 
       self
