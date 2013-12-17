@@ -136,8 +136,8 @@ end
 $mock = start_mock
 
 Minitest.after_run do
-  stop_mock($mock)
   Couchbase.disconnect
+  stop_mock($mock)
 end
 
 class Minitest::Test

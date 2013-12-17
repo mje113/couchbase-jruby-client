@@ -239,7 +239,7 @@ module Couchbase
 
     def disconnect
       if connected?
-        @client.shutdown(3, TimeUnit::SECONDS)
+        @client.shutdown(5, TimeUnit::SECONDS)
         @client = nil
         @connection_factory = nil
         @connected = false

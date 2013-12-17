@@ -97,6 +97,7 @@ class TestBucket < MiniTest::Test
   end
 
   def test_it_raises_error_with_wrong_credentials
+    skip unless $mock.real?
     with_configs do |configs|
       assert_raises Couchbase::Error::Auth do
         Couchbase.new(:hostname => configs.host,

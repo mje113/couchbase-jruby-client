@@ -75,6 +75,7 @@ class TestUnlock < MiniTest::Test
   end
 
   def test_tmp_failure
+    skip unless $mock.real?
     cas1 = cb.set(uniq_id(1), "foo")
     cas2 = cb.set(uniq_id(2), "foo")
     cb.get(uniq_id(1), :lock => true) # get with lock will update CAS

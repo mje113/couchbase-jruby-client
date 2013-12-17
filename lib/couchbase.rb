@@ -144,7 +144,7 @@ module Couchbase
                  @connection_options[:bucket]
                when String
                  path = URI.parse(@connection_options).path
-                 path[%r(^(/pools/([A-Za-z0-9_.-]+)(/buckets/([A-Za-z0-9_.-]+))?)?), 3] || "default"
+                 path[%r(^(/pools/([A-Za-z0-9_.-]+)(/buckets/([A-Za-z0-9_.-]+))?)?), 3] || 'default'
                else
                  'default'
                end
@@ -161,6 +161,7 @@ module Couchbase
       name = @connection_options && @connection_options[:bucket] || "default"
       @@buckets[name] = connection
     end
+    alias set_bucket bucket=
 
     def connected?
       !!@@buckets.empty?
@@ -169,8 +170,9 @@ module Couchbase
     def disconnect
       @@buckets.each_key do |name|
         bucket = @@buckets.delete(name)
-        bucket.disconnect if connected?
+        bucket.disconnect
       end
+      @@buckets = ThreadSafe::Cache.new
     end
   end
 end

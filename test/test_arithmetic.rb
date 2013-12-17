@@ -112,6 +112,7 @@ class TestArithmetic < MiniTest::Test
   end
 
   def test_decrement_with_absolute_ttl
+    skip unless $mock.real?
     # absolute TTL: one second from now
     exp = Time.now.to_i + 1
     val = cb.decr(uniq_id, 12, :initial => 0, :ttl => exp)

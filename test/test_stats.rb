@@ -30,6 +30,8 @@ class TestStats < MiniTest::Test
   end
 
   def test_stats_with_argument
+    skip unless $mock.real?
+
     stats = cb.stats("memory")
     assert stats.is_a?(Hash)
     assert stats.has_key?("mem_used")
