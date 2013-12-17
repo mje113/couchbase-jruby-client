@@ -224,4 +224,8 @@ class TestBucket < MiniTest::Test
     bucket.disconnect
   end
 
+  def test_can_flush_bucket
+    assert cb.flush
+  end
+
 end
