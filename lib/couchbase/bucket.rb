@@ -181,6 +181,8 @@ module Couchbase
         instance_variable_set("@#{key}", value)
       end
 
+      self.password = '' if self.password.nil?
+
       @transcoders = {
         document: Transcoder::Document.new,
         marshal:  Transcoder::Marshal.new,
