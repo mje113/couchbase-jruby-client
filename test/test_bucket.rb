@@ -225,4 +225,14 @@ class TestBucket < MiniTest::Test
     bucket.disconnect
   end
 
+  def test_can_flush_bucket
+    assert cb.flush
+  end
+
+  def test_replaces_nil_password_with_string
+    connection = Couchbase.new(password: nil)
+    assert_equal '', connection.password
+    connection.disconnect
+  end
+
 end

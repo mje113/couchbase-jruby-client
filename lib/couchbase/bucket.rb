@@ -181,6 +181,8 @@ module Couchbase
         instance_variable_set("@#{key}", value)
       end
 
+      self.password = '' if self.password.nil?
+
       @transcoders = {
         document: Transcoder::Document.new,
         marshal:  Transcoder::Marshal.new,
@@ -369,18 +371,7 @@ module Couchbase
     #     end
     #   end
     def flush
-      if !async? && block_given?
-        sync_block_error
-      end
-      req = make_http_request("/pools/default/buckets/#{bucket}/controller/doFlush",
-                              :type => :management, :method => :post, :extended => true)
-      res = nil
-      req.on_body do |r|
-        res = r
-        res.instance_variable_set("@operation", :flush)
-        yield(res) if block_given?
-      end
-      req.continue
+      @client.flush
       true
     end
 
