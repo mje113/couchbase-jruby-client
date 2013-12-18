@@ -371,8 +371,7 @@ module Couchbase
     #     end
     #   end
     def flush
-      @client.flush
-      true
+      @client.flush.get
     end
 
     # Create and register one-shot timer
