@@ -226,6 +226,7 @@ class TestBucket < MiniTest::Test
   end
 
   def test_can_flush_bucket
+    skip unless $mock.real?
     assert cb.flush
   end
 

@@ -18,7 +18,7 @@
 gem 'minitest'
 require 'coveralls'
 Coveralls.wear!
-require 'minitest/autorun'
+require 'minitest'
 require 'couchbase'
 
 require 'socket'
@@ -128,18 +128,6 @@ def start_mock(params = {})
   mock
 end
 
-def stop_mock(mock)
-  # assert(mock)
-  mock.stop
-end
-
-$mock = start_mock
-
-Minitest.after_run do
-  Couchbase.disconnect
-  stop_mock($mock)
-end
-
 class Minitest::Test
 
   def cb
@@ -162,3 +150,11 @@ class Minitest::Test
   end
 
 end
+
+Dir.glob('test/test_*.rb').each { |test| require test }
+
+$mock = start_mock
+exit_code = Minitest.run(ARGV)
+Couchbase.disconnect
+$mock.stop
+java.lang.System.exit(exit_code ? 0 : 1)
