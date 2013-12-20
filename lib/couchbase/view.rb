@@ -294,19 +294,9 @@ module Couchbase
       request = @bucket.client.query(view, query.generate)
 
       if block_given?
-        block = Proc.new
-        request.each do |data|
-          doc = @wrapper_class.wrap(@bucket, data)
-          block.call(doc)
-        end
-        nil
+        fetch_block(request, Proc.new)
       else
-        docs = request.to_a.map { |data|
-          @wrapper_class.wrap(@bucket, data)
-        }
-        docs = ArrayWithTotalRows.new(docs)
-        docs.total_rows = request.size
-        docs
+        fetch_array(request)
       end
     end
 
@@ -343,6 +333,27 @@ module Couchbase
     end
 
     private
+
+    def fetch_array(request)
+      docs = request.to_a.map { |data|
+        wrap_or_parse_data(data)
+      }
+      docs = ArrayWithTotalRows.new(docs)
+      docs.total_rows = request.size
+      docs
+    end
+
+    def fetch_block(request, block)
+      request.each do |data|
+        doc = wrap_or_parse_data(data)
+        block.call(doc)
+      end
+      nil
+    end
+
+    def wrap_or_parse_data(data)
+      @wrapper_class.wrap(@bucket, data)
+    end
 
     def send_error(*args)
       if @on_error

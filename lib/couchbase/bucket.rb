@@ -240,8 +240,7 @@ module Couchbase
     end
 
     def disconnect
-      if connected?
-        @client.shutdown(5, TimeUnit::SECONDS)
+      if connected? && @client.shutdown(3, TimeUnit::SECONDS)
         @client = nil
         @connection_factory = nil
         @connected = false
@@ -371,8 +370,7 @@ module Couchbase
     #     end
     #   end
     def flush
-      @client.flush
-      true
+      @client.flush.get
     end
 
     # Create and register one-shot timer
