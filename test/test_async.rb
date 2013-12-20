@@ -191,7 +191,6 @@ class TestAsync < MiniTest::Test
     assert_raises(ArgumentError) { cb.delete(uniq_id) {} }
     assert_raises(ArgumentError) { cb.append(uniq_id, "bar") {} }
     assert_raises(ArgumentError) { cb.prepend(uniq_id, "bar") {} }
-    assert_raises(ArgumentError) { cb.flush {} }
     assert_raises(ArgumentError) { cb.stats {} }
   end
 

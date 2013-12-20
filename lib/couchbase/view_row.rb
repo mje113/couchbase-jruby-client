@@ -123,13 +123,14 @@ module Couchbase
       @bucket = bucket
       @data   = data
       @key    = data.key
-      @value  = data.value
-      @id     = data.id
       @last   = false
 
       case data
       when ViewRowWithDocs, SpatialViewRowWithDocs
-        @doc   = data.document
+        @id       = data.id
+        @doc      = data.document
+      when ViewRowReduced
+        @value    = MultiJson.load(data.value)
       when SpatialViewRowNoDocs, SpatialViewRowWithDocs
         @geometry = data.geometry
         @bbox     = data.bbox

@@ -22,30 +22,36 @@ class TestView < MiniTest::Test
   def setup
     return unless $mock.real?
 
-    @path = '_design/users/_view/by_age'
     cb.save_design_doc(design_doc)
     { bob: 32, frank: 25, sam: 42, fred: 21 }.each_pair do |name, age|
       cb.set(name, { type: 'user', name: name, age: age })
     end
-    @view = Couchbase::View.new(cb, @path)
+  end
+
+  def view
+    @view ||= Couchbase::View.new(cb, '_design/users/_view/by_age')
+  end
+
+  def reduce_view
+    @reduce_view ||= Couchbase::View.new(cb, '_design/users/_view/all')
   end
 
   def test_initialize
     skip unless $mock.real?
-    assert_equal 'users',  @view.design_doc
-    assert_equal 'by_age', @view.name
+    assert_equal 'users',  view.design_doc
+    assert_equal 'by_age', view.name
   end
 
   def test_simple_fetch
     skip unless $mock.real?
-    assert results = @view.fetch
+    assert results = view.fetch
     assert results.is_a?(Couchbase::View::ArrayWithTotalRows)
   end
 
   def test_fetch_without_stale
     skip unless $mock.real?
-    assert results = @view.fetch(stale: false)
-    assert results.first.is_a?(Couchbase::ViewRow)
+    assert results = view.fetch(stale: false)
+    assert_instance_of Couchbase::ViewRow, results.first
     assert results.first.doc.nil?
     assert_equal 4, results.total_rows
     results.each do |result|
@@ -55,24 +61,48 @@ class TestView < MiniTest::Test
 
   def test_fetch_with_docs
     skip unless $mock.real?
-    assert results = @view.fetch(stale: false, include_docs: true)
-    assert results.is_a?(Array)
-    assert results.first.doc.is_a?(Hash)
+    assert results = view.fetch(stale: false, include_docs: true)
+    assert_instance_of Couchbase::View::ArrayWithTotalRows, results
+    assert_instance_of Hash, results.first.doc
   end
 
   def test_fetch_with_block
     skip unless $mock.real?
-    refute @view.fetch(stale: false, include_docs: true) { |row|
-      assert row.is_a?(Couchbase::ViewRow)
+    refute view.fetch(stale: false, include_docs: true) { |row|
+      assert_instance_of Couchbase::ViewRow, row
       assert row.doc['name'].is_a?(String)
       assert row.doc['age'].is_a?(Fixnum)
     }
   end
 
+  def test_fetch_reduce
+    skip unless $mock.real?
+    assert results = reduce_view.fetch(stale: false, include_docs: false)
+    assert_instance_of Couchbase::ViewRow, results.first
+    assert_equal 4, results.first.value
+  end
+
+  def test_fetch_without_reduce
+    skip unless $mock.real?
+    assert results = reduce_view.fetch(stale: false, reduce: false)
+    assert_instance_of Couchbase::ViewRow, results.first
+    assert results.first.doc.nil?
+    assert_equal 4, results.total_rows
+    results.each do |result|
+      %w(bob frank sam fred).include?(result.key)
+    end
+  end
+
   def test_design_doc_access
     skip unless $mock.real?
     assert results = cb.design_docs['users'].by_age.to_a
-    assert results.first.is_a?(Couchbase::ViewRow)
+    assert_instance_of Couchbase::ViewRow, results.first
+  end
+
+  def test_design_doc_access
+    skip unless $mock.real?
+    assert results = cb.design_docs['users'].by_age.to_a
+    assert_instance_of Couchbase::ViewRow, results.first
   end
 
   def design_doc
@@ -87,9 +117,17 @@ class TestView < MiniTest::Test
                 emit(meta.id, doc.age);
             }
           JS
+        },
+        'all' => {
+          'reduce' => '_count',
+          'map' => <<-JS
+            function (doc, meta) {
+              if (doc.type && doc.type == 'user')
+                emit(meta.id, null);
+            }
+          JS
         }
       }
     }
   end
-
 end
