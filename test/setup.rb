@@ -65,7 +65,7 @@ end
 
 $mock = start_mock
 
-Dir.glob('test/test_*.rb').each { |test| require test }
+Dir.glob('test/test_store.rb').each { |test| require test }
 exit_code = Minitest.run(ARGV)
 Couchbase.disconnect
 $mock.stop

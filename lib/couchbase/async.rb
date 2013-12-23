@@ -21,10 +21,6 @@ require 'couchbase/async/queue'
 module Couchbase
   module Async
 
-    def async?
-      false
-    end
-
     private
 
     def register_future(future, params, &block)

@@ -21,8 +21,9 @@ module Couchbase::Operations
   module Fetch
 
     def fetch(key, set_options = {}, &block)
-      raise ArgumentError('Must pass a block to #fetch') unless block_given?
-      get(key, :quiet => false)
+      fail ArgumentError 'Must pass a block to #fetch' unless block_given?
+
+      get(key, quiet: false)
     rescue Couchbase::Error::NotFound
       yield(block).tap {|value| set(key, value, set_options) }
     end

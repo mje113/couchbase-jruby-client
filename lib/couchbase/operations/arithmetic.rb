@@ -100,7 +100,6 @@ module Couchbase::Operations
     #     end
     #
     def incr(*args)
-      sync_block_error if !async? && block_given?
       do_arithmetic(:incr, *args)
     end
     alias_method :increment, :incr
@@ -189,7 +188,6 @@ module Couchbase::Operations
     #     end
     #
     def decr(*args)
-      sync_block_error if !async? && block_given?
       do_arithmetic(:decr, *args)
     end
     alias_method :decrement, :decr
@@ -228,31 +226,31 @@ module Couchbase::Operations
     end
 
     def single_arithmetic(op, key, delta, options = {})
-      if async?
-        java_async_arithmetic(op, key, delta)
-      else
-        result = java_arithmetic(op, key, delta)
-        set_default_arithmetic_or_raise(key, result, options)
-      end
+      result = case op
+               when :incr
+                 client.incr(key, delta)
+               when :decr
+                 client.decr(key, delta)
+               end
+
+      set_default_arithmetic_or_raise(key, result, options)
     end
 
     def set_default_arithmetic_or_raise(key, result, options)
-      if result < 0
-        if options[:initial] || options[:create] || set_default_arithmetic_init?
-          value = if options[:initial]
-                    options[:initial]
-                  elsif options[:create]
-                    0
-                  else
-                    default_arithmetic_init_int
-                  end
+      return result if result > 0
 
-          set(key, value, options) && value
-        else
-          not_found_error(true)
-        end
+      if options[:initial] || options[:create] || set_default_arithmetic_init?
+        value = if options[:initial]
+                  options[:initial]
+                elsif options[:create]
+                  0
+                else
+                  default_arithmetic_init_int
+                end
+
+        set(key, value, options) && value
       else
-        result
+        not_found_error(true)
       end
     end
 
@@ -280,39 +278,13 @@ module Couchbase::Operations
       end
     end
 
-    def java_arithmetic(op, key, delta)
-      case op
-      when :incr
-        java_incr(key, delta)
-      when :decr
-        java_decr(key, delta)
-      end
-    end
+    # def java_async_incr(key, delta)
+    #   client.asyncIncr(key, delta)
+    # end
 
-    def java_async_arithmetic(op, key, delta)
-      case op
-      when :incr
-        java_async_incr(key, delta)
-      when :decr
-        java_async_decr(key, delta)
-      end
-    end
-
-    def java_incr(key, delta)
-      client.incr(key, delta)
-    end
-
-    def java_async_incr(key, delta)
-      client.asyncIncr(key, delta)
-    end
-
-    def java_decr(key, delta)
-      client.decr(key, delta)
-    end
-
-    def java_async_decr(key, delta)
-      client.asyncDecr(key, delta)
-    end
+    # def java_async_decr(key, delta)
+    #   client.asyncDecr(key, delta)
+    # end
 
   end
 end

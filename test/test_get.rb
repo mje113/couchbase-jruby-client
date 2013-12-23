@@ -165,6 +165,12 @@ class TestGet < MiniTest::Test
     assert_equal "foo", ret.value
   end
 
+  def test_asynchronous_get_without_block
+    assert_raises ArgumentError do
+      cb.async_get(uniq_id)
+    end
+  end
+
   def test_asynchronous_multi_get
     skip
     cb.set(uniq_id(1), "foo")

@@ -92,15 +92,23 @@ class TestStore < MiniTest::Test
 
   def test_asynchronous_set
     ret = nil
-    future = cb.async_set(uniq_id("1"), "foo1") { |res| ret = res }
+    future = cb.async_set(uniq_id, "foo1") { |res| ret = res }
     future.get
     sleep 0.1
 
     assert ret.is_a?(Couchbase::Result)
     assert ret.success?
-    assert_equal uniq_id("1"), ret.key
+    assert_equal uniq_id, ret.key
     assert_equal :set, ret.operation
     assert ret.cas.is_a?(Numeric)
+  end
+
+    def test_asynchronous_set_wtihout_block
+    future = cb.async_set(uniq_id, 'fu')
+    future.get
+    sleep 0.1
+
+    assert_equal 'fu', cb.get(uniq_id)
   end
 
   def test_it_raises_error_when_appending_or_prepending_to_missing_key

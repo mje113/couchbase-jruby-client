@@ -170,7 +170,9 @@ module Couchbase::Operations
       end
     end
 
-    def async_get(key)
+    def async_get(key, &block)
+      fail ArgumentError, 'Must pass a block to #async_get' unless block_given?
+
       case key
       when String, Symbol
         meta = { op: :get, key: key }
@@ -181,7 +183,7 @@ module Couchbase::Operations
       when Hash
         # async_get_and_touch(key, options, &block)
       end
-      register_future(future, meta, &Proc.new) if block_given?
+      register_future(future, meta, &block)
     end
 
     private

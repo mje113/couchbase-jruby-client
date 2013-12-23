@@ -82,22 +82,13 @@ module Couchbase::Operations
     #     c.touch("foo" => 10)             #=> true
     #
     def touch(*args)
-      sync_block_error if !async? && block_given?
       key, ttl, options = expand_touch_args(args)
 
       case key
       when String, Symbol
-        if async?
-          if block_given?
-            async_touch(key, ttl, &Proc.new)
-          else
-            async_touch(key, ttl)
-          end
-        else
-          success = client_touch(key, ttl)
-          not_found_error(!success, options)
-          success
-        end
+        success = client_touch(key, ttl)
+        not_found_error(!success, options)
+        success
       when Hash
         multi_touch_hash(key, options)
       when Array
@@ -105,12 +96,8 @@ module Couchbase::Operations
       end
     end
 
-    def async_touch(key, ttl)
-      if block_given?
-        register_future(client.touch(key, ttl), { op: :touch }, &Proc.new)
-      else
-        client.touch(key, ttl)
-      end
+    def async_touch(key, ttl, &block)
+      register_future(client.touch(key, ttl), { op: :touch }, &block)
     end
 
     private
