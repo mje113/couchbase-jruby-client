@@ -155,16 +155,7 @@ module Couchbase
     # @return [Bucket]
     #
     def initialize(url = nil, options = {})
-      url_options = if url.is_a? String
-                      fail ArgumentError.new unless url =~ /^http:\/\//
-                      uri = URI.new(url)
-                      { hostname: uri.host, port: uri.port }.
-                        merge(path_to_pool_and_bucket(uri.path))
-                    elsif url.nil?
-                      {}
-                    else
-                      url
-                    end
+      url_options = expand_url_options(url)
 
       options = Couchbase.normalize_connection_options(options)
 
@@ -194,11 +185,7 @@ module Couchbase
     end
 
     def connect
-      uris = if @node_list
-               Array(@node_list).map { |n| URI.new(n) }
-             else
-               Array(URI.new(base_url))
-             end
+      uris = expand_node_list
 
       begin
         builder = CouchbaseConnectionFactoryBuilder.new
@@ -362,6 +349,26 @@ module Couchbase
 
     def path_to_pool_and_bucket(path)
       {}
+    end
+
+    def expand_url_options(url)
+      if url.is_a? String
+        fail ArgumentError.new unless url =~ /^http:\/\//
+        uri = URI.new(url)
+        { hostname: uri.host, port: uri.port }.merge(path_to_pool_and_bucket(uri.path))
+      elsif url.nil?
+        {}
+      else
+        url
+      end
+    end
+
+    def expand_node_list
+      if @node_list
+        Array(@node_list).map { |n| URI.new(n) }
+      else
+        Array(URI.new(base_url))
+      end
     end
 
   end
