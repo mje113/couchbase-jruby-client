@@ -18,11 +18,7 @@
 gem 'minitest'
 require 'coveralls'
 Coveralls.wear!
-if ENV['TRAVIS_BUILD_ID']
-  require 'minitest'
-else
-  require 'minitest/autorun'
-end
+require 'minitest'
 require 'couchbase'
 require 'open-uri'
 require 'ostruct'
@@ -69,15 +65,9 @@ end
 
 $mock = start_mock
 
-if ENV['TRAVIS_BUILD_ID']
-  Dir.glob('test/test_*.rb').each { |test| require test }
-  exit_code = Minitest.run(ARGV)
-  Couchbase.disconnect
-  $mock.stop
-  java.lang.System.exit(exit_code ? 0 : 1)
-else
-  Minitest.after_run do
-    $mock.stop
-    Couchbase.disconnect
-  end
-end
+Dir.glob('test/test_*.rb').each { |test| require test }
+exit_code = Minitest.run(ARGV)
+Couchbase.disconnect
+$mock.stop
+java.lang.System.exit(exit_code ? 0 : 1)
+
