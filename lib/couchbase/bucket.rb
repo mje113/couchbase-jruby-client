@@ -51,7 +51,6 @@ module Couchbase
       password:                  '',
       engine:                    nil,
       default_ttl:               0,
-      async:                     false,
       default_arithmetic_init:   0,
       default_flags:             0,
       default_format:            :document,
@@ -65,7 +64,6 @@ module Couchbase
       destroying:                0,
       connected:                 0,
       on_connect_proc:           nil,
-      async_disconnect_hook_set: 0,
       connected:                 false
     }.freeze
 
@@ -132,11 +130,6 @@ module Couchbase
     #     :libevent     :: libevent IO plugin from libcouchbase (optional)
     #     :libev        :: libev IO plugin from libcouchbase (optional)
     #     :eventmachine :: EventMachine plugin (builtin, but requires EM gem and ruby 1.9+)
-    #   @option options [true, false] :async (false) If true, the
-    #     connection instance will be considered always asynchronous and
-    #     IO interaction will be occured only when {Couchbase::Bucket#run}
-    #     called. See {Couchbase::Bucket#on_connect} to hook your code
-    #     after the instance will be connected.
     #
     # @example Initialize connection using default options
     #   Couchbase.new
@@ -189,7 +182,7 @@ module Couchbase
         plain:    Transcoder::Plain.new
       }
 
-      connect unless async?
+      connect
     end
 
     def quiet?
@@ -330,17 +323,9 @@ module Couchbase
     #
     # @return [Fixnum] the CAS of new value
     def cas(key, options = {})
-      if async?
-        block = Proc.new
-        get(key) do |ret|
-          val = block.call(ret) # get new value from caller
-          set(ret.key, val, options.merge(:cas => ret.cas, &block))
-        end
-      else
-        val, flags, ver = get(key, :extended => true)
-        val = yield(val) # get new value from caller
-        set(key, val, options.merge(:cas => ver))
-      end
+      val, flags, ver = get(key, :extended => true)
+      val = yield(val) # get new value from caller
+      set(key, val, options.merge(:cas => ver))
     end
     alias :compare_and_swap :cas
 
@@ -373,190 +358,12 @@ module Couchbase
       @client.flush.get
     end
 
-    # Create and register one-shot timer
-    #
-    # @return [Couchbase::Timer]
-    def create_timer(interval, &block)
-      Timer.new(self, interval, &block)
-    end
-
-    # Create and register periodic timer
-    #
-    # @return [Couchbase::Timer]
-    def create_periodic_timer(interval, &block)
-      Timer.new(self, interval, :periodic => true, &block)
-    end
-
-    # Wait for persistence condition
-    #
-    # @since 1.2.0.dp6
-    #
-    # This operation is useful when some confidence needed regarding the
-    # state of the keys. With two parameters +:replicated+ and +:persisted+
-    # it allows to set up the waiting rule.
-    #
-    # @param [String, Symbol, Array, Hash] keys The list of the keys to
-    #   observe. Full form is hash with key-cas value pairs, but there are
-    #   also shortcuts like just Array of keys or single key. CAS value
-    #   needed to when you need to ensure that the storage persisted exactly
-    #   the same version of the key you are asking to observe.
-    # @param [Hash] options The options for operation
-    # @option options [Fixnum] :timeout The timeout in microseconds
-    # @option options [Fixnum] :replicated How many replicas should receive
-    #   the copy of the key.
-    # @option options [Fixnum] :persisted How many nodes should store the
-    #   key on the disk.
-    #
-    # @raise [Couchbase::Error::Timeout] if the given time is up
-    #
-    # @return [Fixnum, Hash<String, Fixnum>] will return CAS value just like
-    #   mutators or pairs key-cas in case of multiple keys.
-    def observe_and_wait(*keys, &block)
-      options = {:timeout => default_observe_timeout}
-      options.update(keys.pop) if keys.size > 1 && keys.last.is_a?(Hash)
-      verify_observe_options(options)
-      if block && !async?
-        raise ArgumentError, "synchronous mode doesn't support callbacks"
-      end
-      if keys.size == 0
-        raise ArgumentError, "at least one key is required"
-      end
-      if keys.size == 1 && keys[0].is_a?(Hash)
-        key_cas = keys[0]
-      else
-        key_cas = keys.flatten.reduce({}) do |h, kk|
-          h[kk] = nil   # set CAS to nil
-          h
-        end
-      end
-      if async?
-        do_observe_and_wait(key_cas, options, &block)
-      else
-        res = do_observe_and_wait(key_cas, options, &block) while res.nil?
-        unless async?
-          if keys.size == 1 && (keys[0].is_a?(String) || keys[0].is_a?(Symbol))
-            return res.values.first
-          else
-            return res
-          end
-        end
-      end
-    end
-
     private
 
     def path_to_pool_and_bucket(path)
       {}
     end
 
-    def verify_observe_options(options)
-      unless num_replicas
-        raise Couchbase::Error::Libcouchbase, "cannot detect number of the replicas"
-      end
-      unless options[:persisted] || options[:replicated]
-        raise ArgumentError, "either :persisted or :replicated option must be set"
-      end
-      if options[:persisted] && !(1..num_replicas + 1).include?(options[:persisted])
-        raise ArgumentError, "persisted number should be in range (1..#{num_replicas + 1})"
-      end
-      if options[:replicated] && !(1..num_replicas).include?(options[:replicated])
-        raise ArgumentError, "replicated number should be in range (1..#{num_replicas})"
-      end
-    end
-
-    def do_observe_and_wait(keys, options, &block)
-      acc = Hash.new do |h, k|
-        h[k] = Hash.new(0)
-        h[k][:cas] = [keys[k]] # first position is for master node
-        h[k]
-      end
-      check_condition = lambda do
-        ok = catch :break do
-          acc.each do |key, stats|
-            master = stats[:cas][0]
-            if master.nil?
-              # master node doesn't have the key
-              throw :break
-            end
-            if options[:persisted] && (stats[:persisted] < options[:persisted] ||
-                                       stats[:cas].count(master) != options[:persisted])
-              throw :break
-            end
-            if options[:replicated] && (stats[:replicated] < options[:replicated] ||
-                                        stats[:cas].count(master) != options[:replicated] + 1)
-              throw :break
-            end
-          end
-          true
-        end
-        if ok
-          if async?
-            options[:timer].cancel if options[:timer]
-            keys.each do |k, _|
-              block.call(Result.new(:key => k,
-                                    :cas => acc[k][:cas][0],
-                                    :operation => :observe_and_wait))
-            end
-            return :async
-          else
-            return keys.inject({}){|res, (k, _)| res[k] = acc[k][:cas][0]; res}
-          end
-        else
-          options[:timeout] /= 2
-          if options[:timeout] > 0
-            if async?
-              options[:timer] = create_timer(options[:timeout]) do
-                do_observe_and_wait(keys, options, &block)
-              end
-              return :async
-            else
-              # do wait for timeout
-              run { create_timer(options[:timeout]){} }
-              # return nil to avoid recursive call
-              return nil
-            end
-          else
-            err = Couchbase::Error::Timeout.new("the observe request was timed out")
-            err.instance_variable_set("@operation", :observe_and_wait)
-            if async?
-              keys.each do |k, _|
-                block.call(Result.new(:key => k,
-                                      :cas => acc[k][:cas][0],
-                                      :operation => :observe_and_wait,
-                                      :error => err))
-              end
-              return :async
-            else
-              err.instance_variable_set("@key", keys.keys)
-              raise err
-            end
-          end
-        end
-      end
-      collect = lambda do |results|
-        results.each do |res|
-          if res.completed?
-            check_condition.call if async?
-          else
-            if res.from_master?
-              acc[res.key][:cas][0] = res.cas
-            else
-              acc[res.key][:cas] << res.cas
-            end
-            acc[res.key][res.status] += 1
-            if res.status == :persisted
-              acc[res.key][:replicated] += 1
-            end
-          end
-        end
-      end
-      if async?
-        observe(keys.keys, options, &collect)
-      else
-        observe(keys.keys, options).each{|_, v| collect.call(v)}
-        check_condition.call
-      end
-    end
   end
 
 end

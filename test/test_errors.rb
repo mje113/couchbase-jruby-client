@@ -26,6 +26,7 @@ class TestErrors < MiniTest::Test
   end
 
   def test_graceful_add_with_collision
+    skip
     msg1 = {"author" => "foo", "message" => "hi all", "time" => "2012-01-12 11:29:09"}
     key1 = uniq_id(genkey(msg1))
     msg2 = {"author" => "foo", "message" => "hi all", "time" => "2012-01-12 11:29:30"}

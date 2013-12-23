@@ -59,45 +59,49 @@ module Couchbase::Operations
     #     c.delete("foo", :cas => 123456)    #=> will raise Couchbase::Error::KeyExists
     #     c.delete("foo", :cas => ver)       #=> true
     #
-    def delete(*args, &block)
-      sync_block_error if !async? && block_given?
-      key, options = expand_get_args(args)
-      key, cas     = delete_args_parser(key)
+    def delete(*args)
+      key, cas, options = expand_delete_args(args)
 
       if key.respond_to?(:to_ary)
         delete_multi(key, options)
       else
-        delete_single(key, cas, options, &block)
+        delete_single(key, cas, options)
       end
+    end
+
+    def async_delete(*args, &block)
+      key, cas, options = expand_delete_args(args)
+
+      future = client.delete(key)
+      register_future(future, { op: :delete }, &block)
     end
 
     private
 
-    def delete_args_parser(args)
-      if args.respond_to?(:to_str)
-        [args, nil]
+    def expand_delete_args(args)
+      key, options = expand_get_args(args)
+
+      if key.respond_to?(:to_str)
+        [key, options[:cas], options]
       else
-        cas = if args.size > 1 &&
-                 args.last.respond_to?(:to_int)
-                args.pop
+        cas = if key.size > 1 &&
+                 key.last.respond_to?(:to_int)
+                key.pop
               else
                 nil
               end
 
-        key = args.size == 1 ? args.first : args
+        key = key.size == 1 ? key.first : key
 
-        [key, cas]
+        [key, cas, options]
       end
     end
 
-    def delete_single(key, cas, options, &block)
-      if async?
-        java_async_delete(key, &block)
-      else
-        cas = java_delete(key)
-        not_found_error(!cas, options)
-        cas
-      end
+    def delete_single(key, cas, options)
+      future = cas.nil? ? client.delete(key) : client.delete(key, cas)
+      cas = future_cas(future)
+      not_found_error(!cas, options)
+      cas
     end
 
     def delete_multi(keys, options = {})
@@ -106,16 +110,6 @@ module Couchbase::Operations
           results[key] = delete_single(key, nil, options)
         end
       end
-    end
-
-    def java_delete(key)
-      future = client.delete(key)
-      future_cas(future)
-    end
-
-    def java_async_delete(key, &block)
-      future = client.delete(key)
-      register_future(future, { op: :delete }, &block)
     end
   end
 end

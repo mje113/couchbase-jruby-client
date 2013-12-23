@@ -25,10 +25,10 @@ end
 
 CLOBBER << 'test/CouchbaseMock.jar'
 
-Rake::TestTask.new do |test|
-  test.libs << "test" << "."
-  test.pattern = 'test/test_*.rb'
-  # test.options = '--verbose'
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'test'
+  test.pattern = 'test/**/test_*.rb'
+  test.verbose = true
 end
 
 Rake::Task['test'].prerequisites.unshift('test/CouchbaseMock.jar')

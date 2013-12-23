@@ -147,13 +147,7 @@ module Couchbase::Operations
     #
     def get(*args, &block)
       key, options = expand_get_args(args)
-
-      if async?
-        async_get(key, &block)
-      else
-        sync_block_error if block_given?
-        get_key(key, options)
-      end
+      get_key(key, options)
     end
 
     def [](key, options = {})

@@ -21,10 +21,25 @@ class TestDelete < MiniTest::Test
 
   def test_trivial_delete
     cb.set(uniq_id, "bar")
-    assert cb.delete(uniq_id)
+    assert cas = cb.delete(uniq_id)
+    assert cas > 0
+
     assert_raises(Couchbase::Error::NotFound) do
       cb.delete(uniq_id)
     end
+  end
+
+  def test_trivial_async_delete
+    cb.set(uniq_id, 'fu')
+    ret = nil
+    future = cb.async_delete(uniq_id) { |res| ret = res }
+    future.get
+    sleep 0.1
+
+    assert ret.is_a?(Couchbase::Result)
+    assert ret.success?
+    assert_equal :delete, ret.operation
+    assert ret.cas.is_a?(Numeric)
   end
 
   def test_delete_missing
@@ -38,10 +53,9 @@ class TestDelete < MiniTest::Test
   end
 
   def test_delete_with_cas
-    skip
     cas = cb.set(uniq_id, "bar")
     missing_cas = cas - 1
-    assert_raises(Couchbase::Error::KeyExists) do
+    assert_raises(Couchbase::Error::NotFound) do
       cb.delete(uniq_id, :cas => missing_cas)
     end
     assert cb.delete(uniq_id, :cas => cas)

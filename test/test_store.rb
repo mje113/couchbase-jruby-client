@@ -92,10 +92,9 @@ class TestStore < MiniTest::Test
 
   def test_asynchronous_set
     ret = nil
-    cb.run do |conn|
-      conn.set(uniq_id("1"), "foo1") {|res| ret = res}
-      conn.set(uniq_id("2"), "foo2") # ignore result
-    end
+    future = cb.async_set(uniq_id("1"), "foo1") { |res| ret = res }
+    future.get
+    sleep 0.1
 
     assert ret.is_a?(Couchbase::Result)
     assert ret.success?
@@ -105,7 +104,6 @@ class TestStore < MiniTest::Test
   end
 
   def test_it_raises_error_when_appending_or_prepending_to_missing_key
-
     assert_raises(Couchbase::Error::NotStored) do
       cb.append(uniq_id(:missing), "foo")
     end

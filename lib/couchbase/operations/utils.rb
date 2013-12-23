@@ -36,10 +36,6 @@ module Couchbase::Operations
       end
     end
 
-    def sync_block_error
-      raise ArgumentError, "synchronous mode doesn't support callbacks"
-    end
-
     def not_found_error(error, options = {})
       if error
         if options.key?(:quiet)

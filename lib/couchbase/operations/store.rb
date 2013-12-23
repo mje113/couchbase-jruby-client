@@ -126,19 +126,10 @@ module Couchbase::Operations
     #     c.set("foo", "bar", :observe => {:persisted => 1})
     #
     def set(key, value = nil, options = {})
-      if async?
-        if block_given?
-          async_set(key, value, options, &Proc.new)
-        else
-          async_set(key, value, options)
-        end
-      else
-        sync_block_error if block_given?
-        store_op(:set, key, value, options)
-      end
+      store_op(:set, key, value, options)
     end
 
-    def async_set(key, value, options, &block)
+    def async_set(key, value, options = {}, &block)
       async_store_op(:set, key, value, options, &block)
     end
 
@@ -199,16 +190,7 @@ module Couchbase::Operations
     #     c.add("foo", "bar", :observe => {:persisted => 1})
     #
     def add(key, value = nil, options = {})
-      if async?
-        if block_given?
-          async_add(key, value, options, &Proc.new)
-        else
-          async_add(key, value, options)
-        end
-      else
-        sync_block_error if block_given?
-        store_op(:add, key, value, options)
-      end
+      store_op(:add, key, value, options)
     end
 
     def async_add(key, value, options, &block)
@@ -257,16 +239,7 @@ module Couchbase::Operations
     #     c.replace("foo", "bar", :observe => {:persisted => 1})
     #
     def replace(key, value, options = {})
-      if async?
-        if block_given?
-          async_replace(key, value, options, &Proc.new)
-        else
-          async_replace(key, value, options)
-        end
-      else
-        sync_block_error if block_given?
-        store_op(:replace, key, value, options)
-      end
+      store_op(:replace, key, value, options)
     end
 
     def async_replace(key, value, options, &block)
@@ -347,7 +320,6 @@ module Couchbase::Operations
     #     c.append("foo", "bar", :observe => {:persisted => 1})
     #
     def append(key, value)
-      sync_block_error if block_given?
       store_op(:append, key, value)
     end
 
@@ -404,7 +376,6 @@ module Couchbase::Operations
     #     c.prepend("foo", "bar", :observe => {:persisted => 1})
     #
     def prepend(key, value)
-      sync_block_error if block_given?
       store_op(:prepend, key, value)
     end
 

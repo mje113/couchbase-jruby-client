@@ -95,12 +95,7 @@ class TestView < MiniTest::Test
 
   def test_design_doc_access
     skip unless $mock.real?
-    assert results = cb.design_docs['users'].by_age.to_a
-    assert_instance_of Couchbase::ViewRow, results.first
-  end
-
-  def test_design_doc_access
-    skip unless $mock.real?
+    view.fetch(stale: false, include_docs: true)
     assert results = cb.design_docs['users'].by_age.to_a
     assert_instance_of Couchbase::ViewRow, results.first
   end

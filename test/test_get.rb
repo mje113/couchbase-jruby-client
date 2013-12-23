@@ -152,31 +152,17 @@ class TestGet < MiniTest::Test
 
   def test_asynchronous_get
     cas = cb.set(uniq_id, "foo")
-    res = []
+    ret = nil
 
-    suite = lambda do |conn|
-      res.clear
-      conn.get(uniq_id) # ignore result
-      conn.get(uniq_id) {|ret| res << ret}
-      handler = lambda {|ret| res << ret}
-      conn.get(uniq_id, &handler)
-    end
+    future = cb.async_get(uniq_id) { |res| ret = res }
+    future.get
+    sleep 0.1
 
-    checks = lambda do
-      res.each do |r|
-        assert r.is_a?(Couchbase::Result)
-        assert r.success?
-        assert_equal uniq_id, r.key
-        assert_equal "foo", r.value
-        # assert_equal cas, r.cas TODO: GetFuture does not hold CAS
-      end
-    end
-
-    cb.run(&suite)
-    checks.call
-
-    cb.run{ suite.call(cb) }
-    checks.call
+    assert ret.is_a?(Couchbase::Result)
+    assert ret.success?
+    assert_equal uniq_id, ret.key
+    assert_equal :get, ret.operation
+    assert_equal "foo", ret.value
   end
 
   def test_asynchronous_multi_get
