@@ -18,7 +18,7 @@
 gem 'minitest'
 require 'coveralls'
 Coveralls.wear!
-require 'minitest'
+require 'minitest/autorun'
 require 'couchbase'
 require 'open-uri'
 require 'ostruct'
@@ -65,9 +65,11 @@ end
 
 $mock = start_mock
 
-Dir.glob('test/test_*.rb').each { |test| require test }
-exit_code = Minitest.run(ARGV)
-Couchbase.disconnect
-$mock.stop
-java.lang.System.exit(exit_code ? 0 : 1)
+#Dir.glob('test/test_*.rb').each { |test| require test }
+#exit_code = Minitest.run(ARGV)
+Minitest.after_run do
+  Couchbase.disconnect
+  $mock.stop
+end
+#java.lang.System.exit(exit_code ? 0 : 1)
 
