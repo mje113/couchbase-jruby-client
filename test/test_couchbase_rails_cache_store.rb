@@ -20,7 +20,7 @@
 # require 'active_support/notifications'
 # require 'ostruct'
 
-# class TestCouchbaseRailsCacheStore < MiniTest::Test
+# class TestCouchbaseRailsCacheStore < Minitest::Test
 
 #   def setup
 #     @mock = start_mock

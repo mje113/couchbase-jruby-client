@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestFetch < MiniTest::Test
+class TestFetch < Minitest::Test
 
   def test_trivial_fetch
     cb.fetch(uniq_id) do

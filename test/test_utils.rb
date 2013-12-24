@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestUtils < MiniTest::Test
+class TestUtils < Minitest::Test
 
   def test_complex_startkey
     assert_equal "all_docs?startkey=%5B%22Deadmau5%22%2C%22%22%5D", Couchbase::Utils.build_query("all_docs", :startkey =>  ["Deadmau5", ""])

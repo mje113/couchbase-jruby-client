@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestView < MiniTest::Test
+class TestView < Minitest::Test
 
   def setup
     return unless $mock.real?

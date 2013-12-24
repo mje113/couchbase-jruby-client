@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestCas < MiniTest::Test
+class TestCas < Minitest::Test
 
   def test_compare_and_swap
     cb.set(uniq_id, {"bar" => 1})
@@ -28,38 +28,5 @@ class TestCas < MiniTest::Test
     val = cb.get(uniq_id)
     expected = {"bar" => 1, "baz" => 2}
     assert_equal expected, val
-  end
-
-  def test_compare_and_swap_async
-    skip
-    cb.set(uniq_id, {"bar" => 1})
-    calls = 0
-    cb.run do |conn|
-      conn.cas(uniq_id) do |ret|
-        calls += 1
-        case ret.operation
-        when :get
-          new_val = ret.value
-          new_val["baz"] = 2
-          new_val
-        when :set
-          assert ret.success?
-        else
-          flunk "Unexpected operation: #{ret.operation.inspect}"
-        end
-      end
-    end
-    assert_equal 2, calls
-    val = cb.get(uniq_id)
-    expected = {"bar" => 1, "baz" => 2}
-    assert_equal expected, val
-  end
-
-  def test_flags_replication
-    skip
-    cb.set(uniq_id, "bar", :flags => 0x100)
-    cb.cas(uniq_id) { "baz" }
-    _, flags, _ = cb.get(uniq_id, :extended => true)
-    assert_equal 0x100, flags
   end
 end

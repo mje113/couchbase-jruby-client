@@ -17,27 +17,12 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestVersion < MiniTest::Test
+class TestVersion < Minitest::Test
 
-  def test_sync_version
+  def test_version
     ver = cb.version
     assert ver.is_a?(Hash)
     assert_equal 1, ver.size
-  end
-
-  def test_async_version
-    skip
-    ver = {}
-    cb.run do |conn|
-      conn.version do |ret|
-        assert ret.success?
-        ver[ret.node] = ret.value
-      end
-    end
-    assert_equal 1, ver.size
-    ver.each do |node, v|
-      assert v.is_a?(String)
-    end
   end
 
 end

@@ -18,7 +18,7 @@
 require File.join(File.dirname(__FILE__), 'setup')
 require 'digest/md5'
 
-class TestErrors < MiniTest::Test
+class TestErrors < Minitest::Test
 
   def genkey(item)
     tuple = [item["author"], item["message"]]

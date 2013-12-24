@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestQuery < MiniTest::Test
+class TestQuery < Minitest::Test
 
-  
+
 end

@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestStats < MiniTest::Test
+class TestStats < Minitest::Test
 
   def test_trivial_stats_without_argument
     stats = cb.stats

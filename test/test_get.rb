@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestGet < MiniTest::Test
+class TestGet < Minitest::Test
 
   def test_trivial_get
     cb.set(uniq_id, "bar")

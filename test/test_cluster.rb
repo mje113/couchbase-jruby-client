@@ -16,7 +16,7 @@
 #
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestCluster < MiniTest::Test
+class TestCluster < Minitest::Test
 
   def setup
     @cluster = Couchbase::Cluster.new(username: 'admin', password: 'password')

@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestArithmetic < MiniTest::Test
+class TestArithmetic < Minitest::Test
 
   def test_trivial_incr_decr
     cb.set(uniq_id, 1)

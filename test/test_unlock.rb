@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestUnlock < MiniTest::Test
+class TestUnlock < Minitest::Test
 
   def test_trivial_unlock
     cb.set(uniq_id, "foo")

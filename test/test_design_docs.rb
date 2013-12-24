@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestDesignDocs < MiniTest::Test
+class TestDesignDocs < Minitest::Test
 
   def test_save_design_doc
     skip unless $mock.real?

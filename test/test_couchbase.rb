@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestCouchbase < MiniTest::Test
+class TestCouchbase < Minitest::Test
 
   def test_that_it_create_instance_of_bucket
     with_configs do |configs|

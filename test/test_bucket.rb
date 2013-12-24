@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestBucket < MiniTest::Test
+class TestBucket < Minitest::Test
 
   def test_it_substitute_default_parts_to_url
     with_configs(:host => 'localhost') do |configs| # pick first free port

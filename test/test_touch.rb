@@ -17,7 +17,7 @@
 
 require File.join(File.dirname(__FILE__), 'setup')
 
-class TestTouch < MiniTest::Test
+class TestTouch < Minitest::Test
 
   def test_trivial_touch
     cb.set(uniq_id, "bar", :ttl => 1)
