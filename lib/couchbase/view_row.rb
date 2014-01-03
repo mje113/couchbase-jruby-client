@@ -27,7 +27,11 @@ module Couchbase
 
     def doc
       {
-        'meta'  => nil,
+        'meta'  => {
+          'id'    => self['id'],
+          'flags' => 0,
+          'cas'   => 13741960754003181568
+        },
         'value' => document
       }
     end
