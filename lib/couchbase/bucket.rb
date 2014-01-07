@@ -333,16 +333,12 @@ module Couchbase
     # @example Simple flush the bucket
     #   c.flush    #=> true
     #
-    # @example Asynchronous flush
-    #   c.run do
-    #     c.flush do |ret|
-    #       ret.operation   #=> :flush
-    #       ret.success?    #=> true
-    #       ret.status      #=> 200
-    #     end
-    #   end
     def flush
-      @client.flush.get
+      flush.get
+    end
+
+    def async_flush
+      @client.flush
     end
 
     private
