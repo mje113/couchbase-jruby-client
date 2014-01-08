@@ -55,7 +55,8 @@ end
 # Couchbase jruby client
 module Couchbase
 
-  @@buckets = ThreadSafe::Cache.new
+  @@buckets     = ThreadSafe::Cache.new
+  @@connections = ThreadSafe::Array.new
 
   class << self
 
@@ -82,7 +83,9 @@ module Couchbase
     #
     # @return [Bucket] connection instance
     def connect(*options)
-      Bucket.new(*(options.flatten))
+      bucket = Bucket.new(*(options.flatten))
+      @@connections << bucket
+      bucket
     end
     alias :new :connect
 
@@ -168,11 +171,14 @@ module Couchbase
     end
 
     def disconnect
-      @@buckets.each_key do |name|
-        bucket = @@buckets.delete(name)
-        bucket.disconnect
+      @@buckets.each_pair do |bucket, connection|
+        connection.disconnect if connection.connected?
       end
-      @@buckets = ThreadSafe::Cache.new
+      @@connections.each do |connection|
+        connection.disconnect if connection.connected?
+      end
+      @@buckets     = ThreadSafe::Cache.new
+      @@connections = ThreadSafe::Array.new
     end
   end
 end

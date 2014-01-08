@@ -63,11 +63,10 @@ class Minitest::Test
 
 end
 
-$mock = start_mock
-
-Dir.glob('test/test_*.rb').each { |test| require test }
-exit_code = Minitest.run(ARGV)
-Couchbase.disconnect
-$mock.stop
-java.lang.System.exit(exit_code ? 0 : 1)
-
+at_exit {
+  $mock = start_mock
+  exit_code = Minitest.run(ARGV)
+  Couchbase.disconnect
+  $mock.stop
+  java.lang.System.exit(exit_code ? 0 : 1)
+}

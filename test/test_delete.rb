@@ -50,6 +50,8 @@ class TestDelete < Minitest::Test
     refute cb.quiet?
     cb.quiet = true
     refute cb.delete(uniq_id(:missing))
+  ensure
+    cb.quiet = false
   end
 
   def test_delete_with_cas
