@@ -334,7 +334,7 @@ module Couchbase
     #   c.flush    #=> true
     #
     def flush
-      flush.get
+      async_flush.get
     end
 
     def async_flush

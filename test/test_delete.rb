@@ -21,7 +21,8 @@ class TestDelete < Minitest::Test
 
   def test_trivial_delete
     cb.set(uniq_id, "bar")
-    assert cas = cb.delete(uniq_id)
+    cas = cb.delete(uniq_id)
+    assert cas
 
     assert_raises(Couchbase::Error::NotFound) do
       cb.delete(uniq_id)
@@ -53,7 +54,7 @@ class TestDelete < Minitest::Test
 
   def test_delete_with_cas
     cas = cb.set(uniq_id, "bar")
-    missing_cas = cas - 1
+    missing_cas = cas - 100
     assert_raises(Couchbase::Error::NotFound) do
       cb.delete(uniq_id, :cas => missing_cas)
     end
