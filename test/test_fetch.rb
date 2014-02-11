@@ -37,6 +37,27 @@ class TestFetch < Minitest::Test
     assert_equal 'abc', cb.get(uniq_id)
   end
 
+  def test_can_include_get_options
+    cb.set(uniq_id, 'abc')
+
+    get_options = { extended: true }
+    value, _, cas = cb.fetch(uniq_id, {}, get_options) do
+      'unused'
+    end
+
+    assert_equal value, 'abc'
+    assert cas.is_a?(Fixnum)
+  end
+
+  def test_can_include_set_options
+    set_options = { ttl: 1 }
+
+    cb.expects(:set).with(uniq_id, 'abc', set_options)
+    cb.fetch(uniq_id, set_options) do
+      'abc'
+    end
+  end
+
   def test_fetch_works_with_quiet_mode
     cb.quiet = true
     cb.fetch(uniq_id) do

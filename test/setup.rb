@@ -19,6 +19,8 @@ gem 'minitest'
 require 'coveralls'
 Coveralls.wear!
 require 'minitest'
+gem 'mocha'
+require 'mocha/setup'
 require 'couchbase'
 require 'open-uri'
 require 'ostruct'
