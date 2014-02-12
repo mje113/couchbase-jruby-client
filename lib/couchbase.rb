@@ -16,7 +16,7 @@
 #
 
 unless RUBY_PLATFORM =~ /java/
-  error "This gem is only compatible with a java-based ruby environment like JRuby."
+  fail "This gem is only compatible with a java-based ruby environment like JRuby."
   exit 255
 end
 

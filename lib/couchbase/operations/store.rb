@@ -25,9 +25,9 @@ module Couchbase::Operations
   module Store
 
     STORE_OP_METHODS = {
-      set:     -> client, key, value, ttl, transcoder { client.set(key, ttl, value, transcoder) },
-      add:     -> client, key, value, ttl, transcoder { client.add(key, ttl, value, transcoder) },
-      replace: -> client, key, value, ttl, transcoder { client.replace(key, ttl, value, transcoder) },
+      set:     -> client, key, value, ttl, transcoder { client.set(key, ttl.to_i, value, transcoder) },
+      add:     -> client, key, value, ttl, transcoder { client.add(key, ttl.to_i, value, transcoder) },
+      replace: -> client, key, value, ttl, transcoder { client.replace(key, ttl.to_i, value, transcoder) },
       append:  -> client, key, value, ttl, transcoder { client.append(key, value, transcoder) },
       prepend: -> client, key, value, ttl, transcoder { client.prepend(key, value, transcoder) }
     }.freeze
