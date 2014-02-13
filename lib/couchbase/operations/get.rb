@@ -203,7 +203,7 @@ module Couchbase::Operations
       options = extract_options_hash(args)
       key = args.size == 1 ? args.first : args
 
-      [key, options]
+      [validate_key(key), options]
     end
 
     def get_single(key, options)

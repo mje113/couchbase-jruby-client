@@ -222,7 +222,7 @@ module Couchbase::Operations
 
       key = args.size == 1 ? args.first : args
 
-      [key, delta, options]
+      [validate_key(key), delta, options]
     end
 
     def single_arithmetic(op, key, delta, options = {})

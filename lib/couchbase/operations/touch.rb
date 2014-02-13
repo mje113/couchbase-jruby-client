@@ -111,7 +111,7 @@ module Couchbase::Operations
                              end
       key = args.size > 1 ? args : args.pop
 
-      [key, ttl, options]
+      [validate_key(key), ttl, options]
     end
 
     def multi_touch_hash(keys, options = {})

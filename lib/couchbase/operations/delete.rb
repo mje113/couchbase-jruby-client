@@ -82,7 +82,7 @@ module Couchbase::Operations
       key, options = expand_get_args(args)
 
       if key.respond_to?(:to_str)
-        [key, options[:cas], options]
+        [validate_key(key), options[:cas], options]
       else
         cas = if key.size > 1 &&
                  key.last.respond_to?(:to_int)
@@ -93,7 +93,7 @@ module Couchbase::Operations
 
         key = key.size == 1 ? key.first : key
 
-        [key, cas, options]
+        [validate_key(key), cas, options]
       end
     end
 
