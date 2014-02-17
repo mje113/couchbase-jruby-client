@@ -21,14 +21,6 @@ module Couchbase::Operations
     private
 
     def validate_key(key)
-      if key_prefix
-        "#{key_prefix}key"
-      else
-        key.to_s
-      end
-    end
-
-    def validate_key(key)
       raise ArgumentError, "key cannot be blank" if !key || key.length == 0
       key = key_with_prefix(key)
 

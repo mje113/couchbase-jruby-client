@@ -23,7 +23,6 @@ module Couchbase::Operations
     def fetch(key, set_options = {}, get_options = {}, &block)
       fail ArgumentError 'Must pass a block to #fetch' unless block_given?
 
-      key = validate_key(key)
       get_options[:quiet] = false
       get(key, get_options)
     rescue Couchbase::Error::NotFound

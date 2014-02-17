@@ -155,6 +155,7 @@ module Couchbase::Operations
     end
 
     def get_bulk(keys, options)
+      keys = keys.map { |key| validate_key(key) }
       results = if options[:extended]
                   get_bulk_extended(keys, options)
                 else
@@ -175,11 +176,13 @@ module Couchbase::Operations
 
       case key
       when String, Symbol
+        key = validate_key(key)
         meta = { op: :get, key: key }
         future = client.asyncGet(key)
       when Array
+        keys = key.map { |key| validate_key(key) }
         meta = { op: :get }
-        future = client.asyncGetBulk(key)
+        future = client.asyncGetBulk(keys)
       when Hash
         # async_get_and_touch(key, options, &block)
       end
