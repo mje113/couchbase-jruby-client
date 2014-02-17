@@ -19,6 +19,24 @@ require File.join(File.dirname(__FILE__), 'setup')
 
 class TestUtils < Minitest::Test
 
+  def test_nil_or_empty_key
+    assert_raises ArgumentError do
+      cb.set(nil, 'fu')
+    end
+
+    assert_raises ArgumentError do
+      cb.set('', 'bar')
+    end
+  end
+
+  def test_truncate_long_keys
+    key = 'a' * 500
+
+    assert cb.set(key, 'fu')
+    assert_equal 'fu', cb.get(key)
+    assert cb.delete(key)
+  end
+
   def test_complex_startkey
     assert_equal "all_docs?startkey=%5B%22Deadmau5%22%2C%22%22%5D", Couchbase::Utils.build_query("all_docs", :startkey =>  ["Deadmau5", ""])
   end

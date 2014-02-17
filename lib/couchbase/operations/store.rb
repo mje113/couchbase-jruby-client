@@ -386,7 +386,7 @@ module Couchbase::Operations
       ttl = options.delete(:ttl) || default_ttl
       transcoder = @transcoders[options.delete(:format)] || self.transcoder
 
-      [key, value, ttl, transcoder]
+      [validate_key(key), value, ttl, transcoder]
     end
 
     def store_op(op, key, value, options = {})

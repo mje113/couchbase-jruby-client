@@ -21,11 +21,22 @@ module Couchbase::Operations
     private
 
     def validate_key(key)
-      if key_prefix
-        "#{key_prefix}key"
-      else
-        key.to_s
+      raise ArgumentError, "key cannot be blank" if !key || key.length == 0
+      key = key_with_prefix(key)
+
+      if key.length > 250
+        max_length = key_prefix ? 212 - key_prefix.size : 212
+        key = "#{key[0, max_length]}:md5:#{Digest::MD5.hexdigest(key)}"
       end
+      return key
+    end
+
+    def key_with_prefix(key)
+      (prefix = key_prefix) ? "#{prefix}:#{key}" : key
+    end
+
+    def key_without_prefix(key)
+      (prefix = key_prefix) ? key.sub(%r(\A#{prefix}:), '') : key
     end
 
     def extract_options_hash(args)

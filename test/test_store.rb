@@ -73,7 +73,7 @@ class TestStore < Minitest::Test
     cas = cb.set(uniq_id.to_s, "bar")
     assert cas > 0
 
-    assert_raises(TypeError) do
+    assert_raises(ArgumentError) do
       cb.set(nil, "bar")
     end
 
