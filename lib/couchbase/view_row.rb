@@ -126,10 +126,10 @@ module Couchbase
       @data   = data
       @key    = data.key
       @last   = false
+      @id     = data.id unless data.is_a?(ViewRowReduced)
 
       case data
       when ViewRowWithDocs, SpatialViewRowWithDocs
-        @id       = data.id
         @doc      = data.document
       when ViewRowReduced
         @value    = MultiJson.load(data.value)

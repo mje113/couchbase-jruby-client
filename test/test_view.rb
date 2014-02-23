@@ -55,6 +55,19 @@ class TestView < Minitest::Test
     assert results.first.doc.nil?
     assert_equal 4, results.total_rows
     results.each do |result|
+      %w(bob frank sam fred).include?(result.id)
+      %w(bob frank sam fred).include?(result.key)
+    end
+  end
+
+  def test_fetch_no_docs
+    skip unless $mock.real?
+    assert results = view.fetch(include_docs: false, stale: false)
+    assert_instance_of Couchbase::ViewRow, results.first
+    assert results.first.doc.nil?
+    assert_equal 4, results.total_rows
+    results.each do |result|
+      %w(bob frank sam fred).include?(result.id)
       %w(bob frank sam fred).include?(result.key)
     end
   end
