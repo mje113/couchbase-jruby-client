@@ -352,7 +352,11 @@ module Couchbase
     end
 
     def wrap_or_parse_data(data)
-      @wrapper_class.wrap(@bucket, data)
+      if data.is_a? ViewRowReduced
+        data.value
+      else
+        @wrapper_class.wrap(@bucket, data)
+      end
     end
 
     def send_error(*args)
