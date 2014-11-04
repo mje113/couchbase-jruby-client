@@ -26,12 +26,20 @@ module Couchbase
   module Java::ComCouchbaseClientProtocolViews::ViewRow
 
     def doc
-      {
-        'meta'  => {
-          'id'    => self['id']
-        },
-        'value' => document
-      }
+      if self.is_a? ViewRowNoDocs
+        {
+          id:    getId,
+          key:   getKey,
+          value: getValue
+        }
+      else
+        {
+          'meta'  => {
+            'id'    => self['id']
+          },
+          'value' => document
+        }
+      end
     end
 
     def [](key)
