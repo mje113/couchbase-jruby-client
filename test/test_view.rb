@@ -91,8 +91,7 @@ class TestView < Minitest::Test
   def test_fetch_reduce
     skip unless $mock.real?
     assert results = reduce_view.fetch(stale: false, include_docs: false)
-    assert_instance_of Couchbase::ViewRow, results.first
-    assert_equal 4, results.first.value
+    assert_equal '4', results.first
   end
 
   def test_fetch_without_reduce

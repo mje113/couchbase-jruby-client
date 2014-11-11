@@ -23,8 +23,17 @@ module Couchbase
   java_import com.couchbase.client.protocol.views.SpatialViewRowNoDocs
   java_import com.couchbase.client.protocol.views.SpatialViewRowWithDocs
 
-  module Java::ComCouchbaseClientProtocolViews::ViewRow
+  class Java::ComCouchbaseClientProtocolViews::ViewRowNoDocs
+    def doc
+      {
+        id:    getId,
+        key:   getKey,
+        value: getValue
+      }
+    end
+  end
 
+  class Java::ComCouchbaseClientProtocolViews::ViewRowWithDocs
     def doc
       {
         'meta'  => {
@@ -33,7 +42,9 @@ module Couchbase
         'value' => document
       }
     end
+  end
 
+  module Java::ComCouchbaseClientProtocolViews::ViewRow
     def [](key)
       if respond_to?(key)
         send(key)
@@ -42,6 +53,7 @@ module Couchbase
       end
     end
   end
+
 
   # This class encapsulates structured JSON document
   #
