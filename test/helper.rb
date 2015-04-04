@@ -15,22 +15,20 @@
 # limitations under the License.
 #
 
-rule 'test/CouchbaseMock.jar' do |task|
-  jar_path = "0.6-SNAPSHOT/CouchbaseMock-0.6-20130903.160518-3.jar"
-  sh %{wget -q -O test/CouchbaseMock.jar http://files.couchbase.com/maven2/org/couchbase/mock/CouchbaseMock/#{jar_path}}
-end
+gem 'minitest'
+require 'coveralls'
+Coveralls.wear!
+require 'minitest'
+require 'couchbase'
+require 'ostruct'
+require 'pry'
 
-task :test do
-  $LOAD_PATH.unshift('lib', 'test')
+class Minitest::Test
 
-  if ENV['TEST']
-    require ENV['TEST']
-  else
-    Dir.glob('./test/**/test_*.rb') { |f| require f }
+  def uniq_id(*suffixes)
+    test_id = [caller.first[/.*[` ](.*)'/, 1], suffixes].compact.join("_")
+    @ids ||= {}
+    @ids[test_id] ||= Time.now.to_f
+    [test_id, @ids[test_id]].join("_")
   end
-
-  require 'test/setup.rb'
 end
-
-Rake::Task['test'].prerequisites.unshift('test/CouchbaseMock.jar')
-
