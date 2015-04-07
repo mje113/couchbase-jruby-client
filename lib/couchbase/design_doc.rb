@@ -1,5 +1,7 @@
 module Couchbase
 
+  class DesignDocFormatError < Error::Base; end
+
   class DesignDoc
 
     java_import com.couchbase.client.java.view.DesignDocument
@@ -15,6 +17,8 @@ module Couchbase
           @views.add DefaultView.create(view_name.to_s, view[:map])
         end
       end
+    rescue => e
+      raise DesignDocFormatError
     end
 
     def create
