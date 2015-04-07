@@ -17,9 +17,22 @@
 
 module Couchbase
 
-  class ClusterError < Error::Base; end
-
   class Cluster
 
+    java_import com.couchbase.client.java.CouchbaseCluster
+
+    attr_reader :cluster
+
+    def initialize(hosts = 'localhost')
+      @cluster = CouchbaseCluster.create(Array(hosts))
+    end
+
+    def open_bucket(name = 'default', password = '')
+      Bucket.new(@cluster.open_bucket(name, password))
+    end
+
+    def disconnect
+      @cluster.disconnect
+    end
   end
 end

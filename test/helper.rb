@@ -19,9 +19,10 @@ gem 'minitest'
 require 'coveralls'
 Coveralls.wear!
 require 'minitest'
+require 'minitest/autorun'
+require 'pry'
 require 'couchbase'
 require 'ostruct'
-require 'pry'
 
 class Minitest::Test
 

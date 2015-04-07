@@ -21,17 +21,50 @@ require 'jars/rxjava-1.0.8'
 require 'jars/rxjruby-0.0.1'
 require 'jars/core-io-1.1.1'
 require 'jars/java-client-2.1.1'
-
+require 'rx/lang/jruby/interop'
 require 'couchbase/version'
 require 'couchbase/error'
+require 'couchbase/transcoder'
+require 'couchbase/transcoders/multi_json'
+require 'couchbase/transcoders/json_document'
+require 'couchbase/operations'
 require 'couchbase/cluster'
 require 'couchbase/bucket'
+require 'couchbase/design_doc'
+require 'couchbase/configuration'
 
-# at_exit do
-#   Couchbase.disconnect
-# end
+at_exit do
+  Couchbase.disconnect
+end
 
 # Couchbase jruby client
 module Couchbase
 
+  class ConfigurationError < Error::Base; end
+
+  module_function
+
+  @conn = Configuration.new
+
+  def connection_options=(options)
+    raise ConfigurationError, 'Cannot reconfigure an already connected cluster.' if connected?
+    @conn = Configuration.new(options)
+  end
+
+  def connected?
+    @cluster && @bucket
+  end
+
+  def disconnect
+    @cluster.disconnect if @cluster
+    @bucket  = nil
+  end
+
+  def cluster
+    @cluster ||= Cluster.new(Array(@conn[:hostname]))
+  end
+
+  def bucket
+    @bucket ||= cluster.open_bucket(@conn[:bucket], @conn[:password])
+  end
 end
