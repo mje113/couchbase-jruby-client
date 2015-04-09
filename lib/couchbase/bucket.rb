@@ -25,7 +25,7 @@ module Couchbase
 
     def initialize(bucket)
       @bucket = bucket
-      @transcoder = Transcoders::MultiJson.new
+      @transcoder = Transcoders::MultiJsonTranscoder.new
     end
 
     def async

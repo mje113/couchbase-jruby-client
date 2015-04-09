@@ -3,7 +3,7 @@ require 'helper'
 class TestMultiJsonTranscoder < Minitest::Test
 
   def setup
-    @transcoder = Couchbase::Transcoders::MultiJson.new
+    @transcoder = Couchbase::Transcoders::MultiJsonTranscoder.new
   end
 
   def test_java_doc_class

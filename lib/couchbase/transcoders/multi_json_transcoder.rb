@@ -3,7 +3,7 @@ require 'multi_json'
 module Couchbase
   module Transcoders
 
-    class MultiJson < Couchbase::Transcoder
+    class MultiJsonTranscoder < Couchbase::Transcoder
 
       java_import com.couchbase.client.java.document.RawJsonDocument
 
@@ -27,11 +27,13 @@ module Couchbase
       end
 
       def decode(data)
-        ::MultiJson.load(data)
+        MultiJson.load(data)
+      rescue MultiJson::ParseError
+        data
       end
 
       def encode(object)
-        ::MultiJson.dump(object)
+        MultiJson.dump(object)
       end
     end
   end
