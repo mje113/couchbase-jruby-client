@@ -26,7 +26,7 @@ require 'couchbase/version'
 require 'couchbase/error'
 require 'couchbase/transcoder'
 require 'couchbase/transcoders/multi_json_transcoder'
-require 'couchbase/transcoders/json_document'
+require 'couchbase/transcoders/json_document_transcoder'
 require 'couchbase/operations'
 require 'couchbase/cluster'
 require 'couchbase/bucket'
@@ -61,10 +61,20 @@ module Couchbase
   end
 
   def cluster
-    @cluster ||= Cluster.new(Array(@conn[:hostname]))
+    @cluster ||= Cluster.new(@conn.hosts)
   end
 
   def bucket
-    @bucket ||= cluster.open_bucket(@conn[:bucket], @conn[:password])
+    @bucket ||= cluster.open_bucket(@conn.buckets.first.name, @conn.buckets.first.password)
+  end
+
+  def buckets
+    @buckets ||= begin
+      {}.tap do |buckets|
+        @conn.buckets.each do |bucket|
+          buckets[bucket.name.to_sym] = cluster.open_bucket(bucket.name, bucket.password)
+        end
+      end
+    end
   end
 end

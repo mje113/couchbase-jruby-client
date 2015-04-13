@@ -30,4 +30,7 @@ class TestCouchbase < Minitest::Test
     end
   end
 
+  def test_multiple_bukets
+    assert_instance_of Couchbase::Bucket, Couchbase.buckets[:default]
+  end
 end

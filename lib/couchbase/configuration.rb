@@ -3,17 +3,26 @@ module Couchbase
   class Configuration
 
     DEFAULT_CONFIG = {
-      hostname:   'localhost',
-      bucket:     'default',
-      password:   ''
+      host:     'localhost',
+      bucket:   'default',
+      password: ''
     }
 
-    def initialize(options = {})
-      @config = DEFAULT_CONFIG.merge(symbolize_keys(options))
-    end
+    Bucket = Struct.new(:name, :password)
 
-    def [](key)
-      @config[key]
+    attr_accessor :hosts, :buckets
+
+    def initialize(config = {})
+      config = DEFAULT_CONFIG.merge(symbolize_keys(config))
+      @hosts = Array(config[:hosts] || config[:host] || config[:hostname])
+
+      if config[:buckets]
+        @buckets = config[:buckets].map { |b|
+          Bucket.new(b[:name], b[:password])
+        }
+      else
+        @buckets = [ Bucket.new(config[:bucket], config[:password]) ]
+      end
     end
 
     private

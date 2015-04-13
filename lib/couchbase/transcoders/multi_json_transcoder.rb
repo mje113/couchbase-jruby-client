@@ -18,13 +18,15 @@ module Couchbase
         java_document_class.create(key, value)
       end
 
-      def from_doc(doc, options)
+      def from_doc(doc, options = {})
         if options[:format] == :plain
           doc.content
         else
           decode(doc.content)
         end
       end
+
+      private
 
       def decode(data)
         MultiJson.load(data)
