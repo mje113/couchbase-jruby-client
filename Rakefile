@@ -7,11 +7,10 @@ Rake::TestTask.new(:test) do |test|
   test.verbose = true
 end
 
-task :default => :test
+task default: :test
 
 task :pry do
   require 'couchbase'
   require 'pry'
   Pry.start
 end
-

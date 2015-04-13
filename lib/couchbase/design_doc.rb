@@ -18,7 +18,7 @@ module Couchbase
         end
       end
     rescue => e
-      raise DesignDocFormatError
+      raise DesignDocFormatError, e
     end
 
     def create

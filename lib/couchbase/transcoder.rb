@@ -6,19 +6,19 @@ module Couchbase
       fail NotImplementedError
     end
 
-    def to_doc(key, value)
+    def to_doc(*)
       fail NotImplementedError
     end
 
-    def from_doc(doc, options = {})
+    def from_doc(*)
       fail NotImplementedError
     end
 
-    def decode(d)
+    def decode(*)
       fail NotImplementedError
     end
 
-    def encode(o)
+    def encode(*)
       fail NotImplementedError
     end
   end

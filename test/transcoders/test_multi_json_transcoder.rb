@@ -5,7 +5,7 @@ class TestMultiJsonTranscoder < Minitest::Test
   java_import com.couchbase.client.java.document.RawJsonDocument
 
   def setup
-    @json = { 'a' => 'a', 'b' => { 'c' => 1, 'd' => 2 }, 'e' => [ 1, 2, 3] }
+    @json = { 'a' => 'a', 'b' => { 'c' => 1, 'd' => 2 }, 'e' => [1, 2, 3] }
     @transcoder = Couchbase::Transcoders::MultiJsonTranscoder.new
   end
 

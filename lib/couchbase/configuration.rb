@@ -17,11 +17,11 @@ module Couchbase
       @hosts = Array(config[:hosts] || config[:host] || config[:hostname])
 
       if config[:buckets]
-        @buckets = config[:buckets].map { |b|
+        @buckets = config[:buckets].map do |b|
           Bucket.new(b[:name], b[:password])
-        }
+        end
       else
-        @buckets = [ Bucket.new(config[:bucket], config[:password]) ]
+        @buckets = [Bucket.new(config[:bucket], config[:password])]
       end
     end
 

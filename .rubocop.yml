@@ -1,6 +1,4 @@
 AllCops:
-  Exclude:
-
   Includes:
     - '**/Gemfile'
     - '**/Rakefile'

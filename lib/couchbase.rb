@@ -47,7 +47,7 @@ module Couchbase
   @conn = Configuration.new
 
   def connection_options=(options)
-    raise ConfigurationError, 'Cannot reconfigure an already connected cluster.' if connected?
+    fail ConfigurationError, 'Cannot reconfigure an already connected cluster.' if connected?
     @conn = Configuration.new(options)
   end
 

@@ -24,7 +24,7 @@ module Couchbase
     attr_reader :cluster
 
     def initialize(hosts = 'localhost')
-      @cluster = CouchbaseCluster.create(Array(hosts))
+      @cluster = CouchbaseCluster.create(hosts)
     end
 
     def open_bucket(name = 'default', password = '')

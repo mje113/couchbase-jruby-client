@@ -24,12 +24,14 @@ require 'pry'
 require 'couchbase'
 require 'ostruct'
 
-class Minitest::Test
+module Minitest
+  class Test
 
-  def uniq_id(*suffixes)
-    test_id = [caller.first[/.*[` ](.*)'/, 1], suffixes].compact.join("_")
-    @ids ||= {}
-    @ids[test_id] ||= Time.now.to_f
-    [test_id, @ids[test_id]].join("_")
+    def uniq_id(*suffixes)
+      test_id = [caller.first[/.*[` ](.*)'/, 1], suffixes].compact.join('_')
+      @ids ||= {}
+      @ids[test_id] ||= Time.now.to_f
+      [test_id, @ids[test_id]].join('_')
+    end
   end
 end

@@ -8,7 +8,7 @@ class TestBucket < Minitest::Test
   end
 
   def test_legacy_set_and_get
-    obj = { 'a' => 1, 'b' => 'b', 'c' => true, 'd' => [ 1, 2, 3 ]}
+    obj = { 'a' => 1, 'b' => 'b', 'c' => true, 'd' => [1, 2, 3] }
     assert Couchbase.bucket.set('a', obj)
     doc = Couchbase.bucket.get('a')
     assert_equal obj, doc
