@@ -36,5 +36,9 @@ module Couchbase
       design_doc = DesignDoc.new(name, design_doc)
       @bucket.bucket_manager.upsert_design_document(design_doc.create, development)
     end
+
+    def flush
+      bucket.bucketManager.flush
+    end
   end
 end

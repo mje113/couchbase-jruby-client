@@ -18,4 +18,8 @@ class TestBucket < Minitest::Test
     assert Couchbase.bucket.set('a', 'a')
     assert_equal 'a', Couchbase.bucket.get('a')
   end
+
+  def test_flush_bucket
+    assert Couchbase.bucket.flush
+  end
 end
