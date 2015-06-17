@@ -14,11 +14,6 @@ class TestMultiJsonTranscoder < Minitest::Test
     assert_equal @json, @transcoder.from_doc(doc)
   end
 
-  def test_from_doc_plain
-    doc = RawJsonDocument.create('key', MultiJson.dump(@json))
-    assert_equal MultiJson.dump(@json), @transcoder.from_doc(doc, format: :plain)
-  end
-
   def test_to_doc
     doc = @transcoder.to_doc('key', @json)
     assert_equal MultiJson.dump(@json), doc.content
