@@ -1,6 +1,6 @@
 require 'helper'
 
-class PlainTranscoder < Minitest::Test
+class TestPlainTranscoder < Minitest::Test
   java_import com.couchbase.client.java.document.RawJsonDocument
 
   def setup

@@ -9,7 +9,6 @@ module Couchbase
     }
 
     PERSIST_TO = {
-      :master => PersistTo::MASTER,
       0 => PersistTo::NONE,
       1 => PersistTo::ONE,
       2 => PersistTo::TWO,

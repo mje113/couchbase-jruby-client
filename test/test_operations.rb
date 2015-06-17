@@ -34,6 +34,6 @@ class TestOperations < Minitest::Test
   end
 
   def test_set_with_persist_to
-    assert Couchbase.bucket.set(uniq_id, { a: 1 } , persist_to: :master)
+    assert Couchbase.bucket.set(uniq_id, { a: 1 } , persist_to: 1)
   end
 end
