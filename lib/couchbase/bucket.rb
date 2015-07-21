@@ -25,7 +25,6 @@ module Couchbase
 
     def initialize(bucket)
       @bucket = bucket
-      @transcoder = Transcoders::MultiJsonTranscoder.new
     end
 
     def async
@@ -38,7 +37,7 @@ module Couchbase
     end
 
     def flush
-      bucket.bucketManager.flush
+      bucket.bucket_manager.flush
     end
   end
 end
