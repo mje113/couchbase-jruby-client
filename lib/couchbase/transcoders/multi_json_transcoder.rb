@@ -2,13 +2,10 @@ require 'multi_json'
 
 module Couchbase
   module Transcoders
-
     class MultiJsonTranscoder < Couchbase::Transcoder
 
-      java_import com.couchbase.client.java.document.RawJsonDocument
-
       def java_document_class
-        RawJsonDocument
+        com.couchbase.client.java.document.RawJsonDocument
       end
 
       def to_doc(key, value, options = {})
