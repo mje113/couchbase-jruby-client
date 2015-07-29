@@ -10,15 +10,15 @@ class TestConfiguration < Minitest::Test
 
   MULTIPLE_HOSTS = {
     hosts: %w(host1 host2),
-    bucket:   'bar',
+    bucket: 'bar',
     password: 'abc123'
   }
 
   MULTIPLE_BUCKETS = {
     host: '127.0.0.1',
     buckets: [
-      { name: 'fu',  password: 'abc123' },
-      { name: 'bar', password: 'abc123' }
+      { 'name' => 'fu',  'password' => 'abc123' },
+      { 'name' => 'bar', 'password' => 'abc123' }
     ]
   }
 
