@@ -16,9 +16,7 @@
 #
 
 module Couchbase
-
   class Bucket
-
     include Couchbase::Operations
 
     attr_reader :bucket
@@ -34,6 +32,10 @@ module Couchbase
     def save_design_doc(name, design_doc, development = false)
       design_doc = DesignDoc.new(name, design_doc)
       @bucket.bucket_manager.upsert_design_document(design_doc.create, development)
+    end
+
+    def query(design_doc, view)
+      View.new(design_doc, view, self)
     end
 
     def flush

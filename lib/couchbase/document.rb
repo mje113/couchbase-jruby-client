@@ -1,5 +1,7 @@
+require 'delegate'
+
 module Couchbase
-  class Document
+  class Document < DelegateClass(Hash)
 
     attr_reader :id, :cas, :ttl, :content
 

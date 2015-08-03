@@ -32,8 +32,10 @@ require 'couchbase/document'
 require 'couchbase/operations'
 require 'couchbase/cluster'
 require 'couchbase/bucket'
+require 'couchbase/view'
 require 'couchbase/design_doc'
 require 'couchbase/configuration'
+require 'couchbase/view'
 
 at_exit do
   Couchbase.disconnect

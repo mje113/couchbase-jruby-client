@@ -11,6 +11,16 @@ class TestOperations < Minitest::Test
     assert_equal({ 'a' => 1 }, @bucket.get(uniq_id))
   end
 
+  def test_set_and_remove
+    assert @bucket.set(uniq_id, a: 1)
+    assert @bucket.remove(uniq_id)
+  end
+
+  def test_add_and_get
+    assert @bucket.add(uniq_id, a: 1)
+    assert_equal({ 'a' => 1 }, @bucket.get(uniq_id))
+  end
+
   def test_set_and_get_plain
     assert @bucket.set(uniq_id, a: 1)
     assert_equal '{"a":1}', @bucket.get(uniq_id, format: :plain)

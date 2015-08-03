@@ -17,20 +17,42 @@ module Couchbase
       4 => PersistTo::FOUR
     }
 
-    def set(key, value, options = {})
-      doc = to_doc(key, value, options)
+    def set(id, value, options = {})
       if options[:persist_to]
-        @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
+        upsert_with_persistance(id, value, options)
       else
-        @bucket.upsert(doc)
+        upsert(id, value, options)
       end
     end
 
-    def get(key, options = {})
-      doc = @bucket.get(key, transcoder(options).java_document_class.java_class)
+    def upsert(id, value, options = {})
+      doc = to_doc(id, value, options)
+      @bucket.upsert(doc)
+    end
+
+    def upsert_with_persistance(id, value, options = {})
+      doc = to_doc(id, value, options)
+      @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
+    end
+
+    def add(id, value, options = {})
+      insert(id, value, options)
+    end
+
+    def insert(id, value, options = {})
+      doc = to_doc(id, value, options)
+      @bucket.insert(doc)
+    end
+
+    def get(id, options = {})
+      doc = @bucket.get(id, transcoder(options).java_document_class.java_class)
       return nil if doc.nil?
 
       from_doc(doc, options)
+    end
+
+    def remove(id)
+      @bucket.remove(id)
     end
 
     private
@@ -39,8 +61,8 @@ module Couchbase
       TRANSCODERS[options[:format] || :json]
     end
 
-    def to_doc(key, value, options)
-      transcoder(options).to_doc(key, value, options)
+    def to_doc(id, value, options)
+      transcoder(options).to_doc(id, value, options)
     end
 
     def from_doc(doc, options)
