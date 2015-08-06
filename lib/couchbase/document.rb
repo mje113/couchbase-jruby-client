@@ -27,6 +27,7 @@ module Couchbase
     end
     alias_method :to_a, :data
     alias_method :to_h, :data
+    alias_method :to_hash, :data
 
     def_delegators :data, :[], :each, :each_pair, :keys, :values, :key?
   end
