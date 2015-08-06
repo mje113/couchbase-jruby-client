@@ -11,12 +11,22 @@ module Couchbase
     end
 
     def key(key)
-      case key
-      when Array
-        @view_query.key(JsonArray.from(key.to_java))
-      else
-        @view_query.key(key)
-      end
+      @view_query.key(convert_key(key))
+      self
+    end
+
+    def keys(keys)
+      @view_query.keys(JsonArray.from(keys.to_java))
+      self
+    end
+
+    def start_key(key)
+      @view_query.start_key(convert_key(key))
+      self
+    end
+
+    def end_key(key)
+      @view_query.end_key(convert_key(key))
       self
     end
 
@@ -25,14 +35,28 @@ module Couchbase
       self
     end
 
-    def fresh
-      @view_query.stale(com.couchbase.client.java.view.Stale::FALSE)
+    def skip(num)
+      @view_query.skip(num)
       self
     end
 
-    def format(format)
-      raise ArgumentError unless Operations::TRANSCODERS.keys.include?(format)
-      @format = format
+    def group(group = true)
+      @view_query.group(group)
+      self
+    end
+
+    def group_level(level)
+      @view_query.group_level(level)
+      self
+    end
+
+    def reduce(reduce = true)
+      @view_query.reduce(reduce)
+      self
+    end
+
+    def fresh
+      @view_query.stale(com.couchbase.client.java.view.Stale::FALSE)
       self
     end
 
@@ -40,9 +64,20 @@ module Couchbase
       results = @bucket.query(@view_query)
       {}.tap do |response|
         results.each do |view_row|
-          doc = view_row.document(Operations::TRANSCODERS[@format].java_document_class.java_class)
-          response[view_row.id] = doc.nil? ? nil : Operations::TRANSCODERS[@format].from_doc(doc)
+          doc = view_row.document(RawJsonDocument.java_class)
+          response[view_row.id] = doc.nil? ? nil : Document.new(doc)
         end
+      end
+    end
+
+    private
+
+    def convert_key(key)
+      case key
+      when Array
+        @view_query.key(JsonArray.from(key.to_java))
+      else
+        @view_query.key(key)
       end
     end
   end

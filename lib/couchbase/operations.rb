@@ -1,12 +1,9 @@
 module Couchbase
   module Operations
     java_import com.couchbase.client.java.PersistTo
+    java_import com.couchbase.client.java.document.RawJsonDocument
 
-    TRANSCODERS = {
-      plain: Transcoders::PlainTranscoder.new,
-      json:  Transcoders::MultiJsonTranscoder.new,
-      doc:   Transcoders::JsonDocumentTranscoder.new
-    }
+    RAW_JSON_DOCUMENT_CLASS = RawJsonDocument.java_class
 
     PERSIST_TO = {
       :master => PersistTo::MASTER,
@@ -26,12 +23,12 @@ module Couchbase
     end
 
     def upsert(id, value, options = {})
-      doc = to_doc(id, value, options)
+      doc = doc_with_ttl(id, value, options)
       @bucket.upsert(doc)
     end
 
     def upsert_with_persistance(id, value, options = {})
-      doc = to_doc(id, value, options)
+      doc = doc_with_ttl(id, value, options)
       @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
     end
 
@@ -40,15 +37,14 @@ module Couchbase
     end
 
     def insert(id, value, options = {})
-      doc = to_doc(id, value, options)
+      doc = doc_with_ttl(id, value, options)
       @bucket.insert(doc)
     end
 
     def get(id, options = {})
-      doc = @bucket.get(id, transcoder(options).java_document_class.java_class)
+      doc = @bucket.get(id, RAW_JSON_DOCUMENT_CLASS)
       return nil if doc.nil?
-
-      from_doc(doc, options)
+      Document.new(doc)
     end
 
     def remove(id)
@@ -57,16 +53,14 @@ module Couchbase
 
     private
 
-    def transcoder(options)
-      TRANSCODERS[options[:format] || :json]
-    end
+    def doc_with_ttl(id, value, options)
+      value = MultiJson.dump(value) unless value.respond_to?(:to_str)
 
-    def to_doc(id, value, options)
-      transcoder(options).to_doc(id, value, options)
-    end
-
-    def from_doc(doc, options)
-      transcoder(options).from_doc(doc)
+      if options[:ttl]
+        RawJsonDocument.create(id, options[:ttl], value)
+      else
+        RawJsonDocument.create(id, value)
+      end
     end
   end
 end

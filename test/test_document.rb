@@ -17,10 +17,15 @@ class TestDocument < Minitest::Test
     assert_equal 100,   @document.ttl
     assert_equal @json_string, @document.content
     assert_equal @json_string, @document.to_s
+    assert_equal @json_string, "#{@document}"
   end
 
   def test_hash_conversion
     assert_equal @json_hash, @document.to_h
+  end
+
+  def test_array_conversion
+    assert_equal @json_hash, @document.to_a
   end
 
   def test_implicit_hash_conversion

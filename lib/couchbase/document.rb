@@ -11,21 +11,23 @@ module Couchbase
       @cas     = java_doc.cas
       @ttl     = java_doc.expiry
       @content = java_doc.content
-      @hash    = nil
+      @data    = nil
     end
 
     def to_s
       @content
     end
 
-    def to_h
-      @hash ||= begin
+    def data
+      @data ||= begin
                   MultiJson.load(@content)
                 rescue MultiJson::ParseError
                   # TODO: figure out what to do here...
                 end
     end
+    alias_method :to_a, :data
+    alias_method :to_h, :data
 
-    def_delegators :to_h, :[], :each, :each_pair, :keys, :values, :key?
+    def_delegators :data, :[], :each, :each_pair, :keys, :values, :key?
   end
 end

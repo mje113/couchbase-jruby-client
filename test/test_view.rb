@@ -21,22 +21,7 @@ class TestView < Minitest::Test
     results = @bucket.query('test', 'test_view')
       .fresh
       .fetch
-    assert_equal true, results[uniq_id]
-  end
-
-  def test_format_check
-    assert_raises ArgumentError do
-      @bucket.query('test', 'test_view').format(:fu)
-    end
-  end
-
-  def test_unformatted_view_query
-    @bucket.upsert(uniq_id, true)
-    results = @bucket.query('test', 'test_view')
-      .fresh
-      .format(:plain)
-      .fetch
-    assert_equal 'true', results[uniq_id]
+    assert_equal true, results[uniq_id].to_h
   end
 
   def test_returns_nils_as_appropriate
