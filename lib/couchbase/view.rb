@@ -64,8 +64,13 @@ module Couchbase
       results = @bucket.query(@view_query)
       {}.tap do |response|
         results.each do |view_row|
-          doc = view_row.document(RawJsonDocument.java_class)
-          response[view_row.id] = doc.nil? ? nil : Document.new(doc)
+          if view_row.id.nil?
+            # Reduced view
+            return view_row.value
+          else
+            doc = view_row.document(RawJsonDocument.java_class)
+            response[view_row.id] = doc.nil? ? nil : Document.new(doc)
+          end
         end
       end
     end
@@ -75,9 +80,9 @@ module Couchbase
     def convert_key(key)
       case key
       when Array
-        @view_query.key(JsonArray.from(key.to_java))
+        JsonArray.from(key.to_java)
       else
-        @view_query.key(key)
+        key
       end
     end
   end
