@@ -18,6 +18,7 @@ module Couchbase
 
       if config[:buckets]
         @buckets = config[:buckets].map do |b|
+          b = symbolize_keys(b)
           Bucket.new(b[:name], b[:password])
         end
       else

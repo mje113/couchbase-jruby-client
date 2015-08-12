@@ -1,12 +1,9 @@
 module Couchbase
   module Operations
     java_import com.couchbase.client.java.PersistTo
+    java_import com.couchbase.client.java.document.RawJsonDocument
 
-    TRANSCODERS = {
-      plain: Transcoders::PlainTranscoder.new,
-      json:  Transcoders::MultiJsonTranscoder.new,
-      doc:   Transcoders::JsonDocumentTranscoder.new
-    }
+    RAW_JSON_DOCUMENT_CLASS = RawJsonDocument.java_class
 
     PERSIST_TO = {
       :master => PersistTo::MASTER,
@@ -17,34 +14,53 @@ module Couchbase
       4 => PersistTo::FOUR
     }
 
-    def set(key, value, options = {})
-      doc = to_doc(key, value, options)
+    def set(id, value, options = {})
       if options[:persist_to]
-        @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
+        upsert_with_persistance(id, value, options)
       else
-        @bucket.upsert(doc)
+        upsert(id, value, options)
       end
     end
 
-    def get(key, options = {})
-      doc = @bucket.get(key, transcoder(options).java_document_class.java_class)
-      return nil if doc.nil?
+    def upsert(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.upsert(doc)
+    end
 
-      from_doc(doc, options)
+    def upsert_with_persistance(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
+    end
+
+    def add(id, value, options = {})
+      insert(id, value, options)
+    end
+
+    def insert(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.insert(doc)
+    end
+
+    def get(id, options = {})
+      doc = @bucket.get(id, RAW_JSON_DOCUMENT_CLASS)
+      return nil if doc.nil?
+      Document.new(doc)
+    end
+
+    def remove(id)
+      @bucket.remove(id)
     end
 
     private
 
-    def transcoder(options)
-      TRANSCODERS[options[:format] || :json]
-    end
+    def doc_with_ttl(id, value, options)
+      value = MultiJson.dump(value) unless value.respond_to?(:to_str)
 
-    def to_doc(key, value, options)
-      transcoder(options).to_doc(key, value, options)
-    end
-
-    def from_doc(doc, options)
-      transcoder(options).from_doc(doc)
+      if options[:ttl]
+        RawJsonDocument.create(id, options[:ttl], value)
+      else
+        RawJsonDocument.create(id, value)
+      end
     end
   end
 end

@@ -19,20 +19,19 @@ fail 'This gem is only compatible with JRuby.' unless RUBY_PLATFORM =~ /java/
 
 require 'jars/rxjava-1.0.8'
 require 'jars/rxjruby-0.0.1'
-require 'jars/core-io-1.1.1'
-require 'jars/java-client-2.1.1'
+require 'jars/couchbase-core-io-1.1.4'
+require 'jars/couchbase-java-client-2.1.4'
 require 'rx/lang/jruby/interop'
 require 'couchbase/version'
 require 'couchbase/error'
-require 'couchbase/transcoder'
-require 'couchbase/transcoders/multi_json_transcoder'
-require 'couchbase/transcoders/json_document_transcoder'
-require 'couchbase/transcoders/plain_transcoder'
+require 'couchbase/document'
 require 'couchbase/operations'
 require 'couchbase/cluster'
 require 'couchbase/bucket'
+require 'couchbase/view'
 require 'couchbase/design_doc'
 require 'couchbase/configuration'
+require 'couchbase/view'
 
 at_exit do
   Couchbase.disconnect
@@ -53,20 +52,21 @@ module Couchbase
   end
 
   def connected?
-    @cluster && @bucket
+    @cluster
   end
 
   def disconnect
     @cluster.disconnect if @cluster
-    @bucket  = nil
+    @buckets = nil
   end
 
   def cluster
     @cluster ||= Cluster.new(@conn.hosts)
   end
 
-  def bucket
-    @bucket ||= cluster.open_bucket(@conn.buckets.first.name, @conn.buckets.first.password)
+  def bucket(name = nil)
+    name ||= :default
+    buckets[name.to_sym]
   end
 
   def buckets

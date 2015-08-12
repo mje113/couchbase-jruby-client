@@ -11,12 +11,12 @@ class TestBucket < Minitest::Test
     obj = { 'a' => 1, 'b' => 'b', 'c' => true, 'd' => [1, 2, 3] }
     assert Couchbase.bucket.set('a', obj)
     doc = Couchbase.bucket.get('a')
-    assert_equal obj, doc
+    assert_equal obj, doc.to_h
   end
 
   def test_get_and_set_string
     assert Couchbase.bucket.set('a', 'a')
-    assert_equal 'a', Couchbase.bucket.get('a')
+    assert_equal 'a', Couchbase.bucket.get('a').to_s
   end
 
   def test_flush_bucket
