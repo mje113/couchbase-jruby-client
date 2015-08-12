@@ -1,5 +1,16 @@
 require 'bundler/gem_tasks'
+require 'rake/testtask'
 
-Dir['tasks/*.rake'].sort.each { |f| load f }
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'test'
+  test.pattern = 'test/**/test_*.rb'
+  test.verbose = true
+end
 
-task :default => :test
+task default: :test
+
+task :pry do
+  require 'couchbase'
+  require 'pry'
+  Pry.start
+end

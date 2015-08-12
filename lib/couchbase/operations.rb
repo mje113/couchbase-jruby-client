@@ -1,46 +1,66 @@
-# Author:: Mike Evans <mike@urlgonomics.com>
-# Copyright:: 2013 Urlgonomics LLC.
-# License:: Apache License, Version 2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-require 'couchbase/operations/touch'
-require 'couchbase/operations/store'
-require 'couchbase/operations/get'
-require 'couchbase/operations/fetch'
-require 'couchbase/operations/delete'
-require 'couchbase/operations/unlock'
-require 'couchbase/operations/arithmetic'
-require 'couchbase/operations/stats'
-require 'couchbase/operations/design_docs'
-require 'couchbase/operations/utils'
-
 module Couchbase
   module Operations
+    java_import com.couchbase.client.java.PersistTo
+    java_import com.couchbase.client.java.document.RawJsonDocument
 
-    def self.included(klass)
-      klass.send(:include, Store)
-      klass.send(:include, Get)
-      klass.send(:include, Fetch)
-      klass.send(:include, Touch)
-      klass.send(:include, Delete)
-      klass.send(:include, Unlock)
-      klass.send(:include, Arithmetic)
-      klass.send(:include, Stats)
-      klass.send(:include, DesignDocs)
-      klass.send(:include, Utils)
+    RAW_JSON_DOCUMENT_CLASS = RawJsonDocument.java_class
+
+    PERSIST_TO = {
+      :master => PersistTo::MASTER,
+      0 => PersistTo::NONE,
+      1 => PersistTo::ONE,
+      2 => PersistTo::TWO,
+      3 => PersistTo::THREE,
+      4 => PersistTo::FOUR
+    }
+
+    def set(id, value, options = {})
+      if options[:persist_to]
+        upsert_with_persistance(id, value, options)
+      else
+        upsert(id, value, options)
+      end
+    end
+
+    def upsert(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.upsert(doc)
+    end
+
+    def upsert_with_persistance(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.upsert(doc, PERSIST_TO[options[:persist_to]])
+    end
+
+    def add(id, value, options = {})
+      insert(id, value, options)
+    end
+
+    def insert(id, value, options = {})
+      doc = doc_with_ttl(id, value, options)
+      @bucket.insert(doc)
+    end
+
+    def get(id, options = {})
+      doc = @bucket.get(id, RAW_JSON_DOCUMENT_CLASS)
+      return nil if doc.nil?
+      Document.new(doc)
+    end
+
+    def remove(id)
+      @bucket.remove(id)
+    end
+
+    private
+
+    def doc_with_ttl(id, value, options)
+      value = MultiJson.dump(value) unless value.respond_to?(:to_str)
+
+      if options[:ttl]
+        RawJsonDocument.create(id, options[:ttl], value)
+      else
+        RawJsonDocument.create(id, value)
+      end
     end
   end
 end
-

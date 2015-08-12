@@ -1,7 +1,0 @@
-source 'https://rubygems.org'
-
-gem 'benchmark-ips'
-gem 'jrjackson',    '~> 0.2.3'
-gem 'multi_json',   '~> 1.0'
-gem 'atomic',       '~> 1.1.14'
-gem 'thread_safe'

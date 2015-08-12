@@ -19,13 +19,14 @@ Gem::Specification.new do |s|
   s.test_files    = s.files.grep(%r{^(test|spec|features)/})
   s.require_paths = ['lib']
 
-  s.add_runtime_dependency 'multi_json',    '>= 1.0'
-  s.add_runtime_dependency 'thread_safe',   '>= 0.1.2'
+  s.add_runtime_dependency 'multi_json'
+  s.add_runtime_dependency 'jbundler'
+  s.requirements << "jar 'com.couchbase:java-client', '2.1.1'"
 
-  s.add_development_dependency 'bundler',   '>= 1.3'
+  s.add_development_dependency 'bundler'
   s.add_development_dependency 'rake'
-  s.add_development_dependency 'minitest',  '>= 5.1.0'
-  s.add_development_dependency 'jrjackson', '>= 0.2.3'
+  s.add_development_dependency 'minitest'
+  s.add_development_dependency 'jrjackson'
   s.add_development_dependency 'pry'
-  s.add_development_dependency 'mocha'
+  s.add_development_dependency 'rubocop'
 end
