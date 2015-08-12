@@ -3,7 +3,7 @@ require 'helper'
 class TestView < Minitest::Test
 
   def setup
-    @bucket = Couchbase.bucket
+    @bucket = Couchbase.bucket(:default)
     @design_doc = {
       test_map: {
         map: <<-JS

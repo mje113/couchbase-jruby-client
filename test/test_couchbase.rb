@@ -15,16 +15,16 @@ class TestCouchbase < Minitest::Test
   end
 
   def test_bucket_access
-    assert_instance_of Couchbase::Bucket, Couchbase.bucket
+    assert_instance_of Couchbase::Bucket, Couchbase.bucket(:default)
   end
 
   def test_connection_status
-    Couchbase.bucket
+    Couchbase.bucket(:default)
     assert Couchbase.connected?
   end
 
   def test_configuration_error
-    Couchbase.bucket
+    Couchbase.bucket(:default)
     assert_raises Couchbase::ConfigurationError do
       Couchbase.connection_options = {}
     end

@@ -64,8 +64,7 @@ module Couchbase
     @cluster ||= Cluster.new(@conn.hosts)
   end
 
-  def bucket(name = nil)
-    name ||= :default
+  def bucket(name)
     buckets[name.to_sym]
   end
 

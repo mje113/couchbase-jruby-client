@@ -3,7 +3,7 @@ require 'helper'
 class TestOperations < Minitest::Test
 
   def setup
-    @bucket = Couchbase.bucket
+    @bucket = Couchbase.bucket(:default)
   end
 
   def test_set_and_get
