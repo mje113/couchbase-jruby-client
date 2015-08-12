@@ -52,20 +52,21 @@ module Couchbase
   end
 
   def connected?
-    @cluster && @bucket
+    @cluster
   end
 
   def disconnect
     @cluster.disconnect if @cluster
-    @bucket  = nil
+    @buckets = nil
   end
 
   def cluster
     @cluster ||= Cluster.new(@conn.hosts)
   end
 
-  def bucket
-    @bucket ||= cluster.open_bucket(@conn.buckets.first.name, @conn.buckets.first.password)
+  def bucket(name = nil)
+    name ||= :default
+    buckets[name.to_sym]
   end
 
   def buckets
