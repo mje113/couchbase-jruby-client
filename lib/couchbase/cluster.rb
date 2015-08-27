@@ -33,6 +33,8 @@ module Couchbase
 
     def disconnect
       @cluster.disconnect
+    rescue RejectedExecutionException => e
+      # ScheduledThreadPoolExecutor has already shut down. ignore this message
     end
   end
 end
