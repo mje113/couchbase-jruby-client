@@ -20,6 +20,7 @@ module Couchbase
   class Cluster
 
     java_import com.couchbase.client.java.CouchbaseCluster
+    java_import java.util.concurrent.RejectedExecutionException
 
     attr_reader :cluster
 
