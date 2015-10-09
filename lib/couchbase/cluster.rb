@@ -20,6 +20,7 @@ module Couchbase
   class Cluster
 
     java_import com.couchbase.client.java.CouchbaseCluster
+    java_import java.util.concurrent.RejectedExecutionException
 
     attr_reader :cluster
 
@@ -33,6 +34,8 @@ module Couchbase
 
     def disconnect
       @cluster.disconnect
+    rescue RejectedExecutionException => e
+      # ScheduledThreadPoolExecutor has already shut down. ignore this message
     end
   end
 end

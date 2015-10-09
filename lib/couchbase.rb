@@ -32,9 +32,10 @@ require 'couchbase/view'
 require 'couchbase/design_doc'
 require 'couchbase/configuration'
 require 'couchbase/view'
+require 'multi_json'
 
 at_exit do
-  Couchbase.disconnect
+  Couchbase.disconnect if Couchbase.connected?
 end
 
 # Couchbase jruby client
