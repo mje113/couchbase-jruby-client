@@ -1,3 +1,5 @@
+require 'multi_json'
+
 module Couchbase
   module Operations
     java_import com.couchbase.client.java.PersistTo

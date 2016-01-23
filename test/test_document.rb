@@ -1,4 +1,5 @@
 require 'helper'
+require 'multi_json'
 
 class TestDocument < Minitest::Test
   include Couchbase
