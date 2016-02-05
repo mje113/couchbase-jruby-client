@@ -1,4 +1,5 @@
 require 'forwardable'
+require 'multi_json'
 
 module Couchbase
   class Document

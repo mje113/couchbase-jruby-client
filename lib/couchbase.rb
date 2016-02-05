@@ -17,11 +17,11 @@
 
 fail 'This gem is only compatible with JRuby.' unless RUBY_PLATFORM =~ /java/
 
-require 'jars/rxjava-1.0.8'
+require 'jars/rxjava-1.1.0'
 require 'jars/rxjruby-0.0.1'
-require 'jars/couchbase-core-io-1.1.4'
-require 'jars/couchbase-java-client-2.1.4'
-require 'rx/lang/jruby/interop'
+require 'jars/core-io-1.2.3'
+require 'jars/java-client-2.2.3'
+require "rx/lang/jruby/interop"
 require 'couchbase/version'
 require 'couchbase/error'
 require 'couchbase/document'

@@ -17,12 +17,12 @@ class TestView < Minitest::Test
         reduce: '_count'
       }
     }
-    @bucket.save_design_doc('test', @design_doc)
+    @bucket.save_design_doc('default', @design_doc)
   end
 
   def test_view_query
     @bucket.upsert(uniq_id, true)
-    results = @bucket.query('test', 'test_map')
+    results = @bucket.query('default', 'test_map')
       .fresh
       .fetch
 
@@ -31,7 +31,7 @@ class TestView < Minitest::Test
 
   def test_key
     @bucket.upsert(uniq_id, true)
-    results = @bucket.query('test', 'test_map')
+    results = @bucket.query('default', 'test_map')
       .key(uniq_id)
       .fresh
       .fetch
@@ -43,7 +43,7 @@ class TestView < Minitest::Test
   def test_keys
     @bucket.upsert(uniq_id(:a), true)
     @bucket.upsert(uniq_id(:b), true)
-    results = @bucket.query('test', 'test_map')
+    results = @bucket.query('default', 'test_map')
       .keys([uniq_id(:a), uniq_id(:b)])
       .fresh
       .fetch
@@ -56,15 +56,15 @@ class TestView < Minitest::Test
   def test_returns_nils_as_appropriate
     100.times { |i| @bucket.upsert(uniq_id(i), true) }
     # Force an index
-    @bucket.query('test', 'test_map').fresh.fetch
+    @bucket.query('default', 'test_map').fresh.fetch
     100.times { |i| @bucket.remove(uniq_id(i)) }
-    results = @bucket.query('test', 'test_map').fetch
+    results = @bucket.query('default', 'test_map').fetch
     assert_nil results[uniq_id(23)]
   end
 
   def test_reduced_view
     @bucket.upsert(uniq_id, true)
-    results = @bucket.query('test', 'test_reduce')
+    results = @bucket.query('default', 'test_reduce')
       .fresh
       .fetch
 
@@ -74,7 +74,7 @@ class TestView < Minitest::Test
 
   def test_non_reduced_view
     @bucket.upsert(uniq_id, true)
-    results = @bucket.query('test', 'test_reduce')
+    results = @bucket.query('default', 'test_reduce')
       .fresh
       .reduce(false)
       .fetch
